@@ -12,6 +12,7 @@ import tempfile
 import threading
 import webbrowser
 
+import aiohttp
 from aiohttp import web
 import edge_tts
 
@@ -383,6 +384,7 @@ PAGE = r"""<!doctype html>
   <div class="brand"><span class="navbadge"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="20" y="9" width="8" height="16" rx="4"/><path d="M14 22 a10 10 0 0 0 20 0" fill="none" stroke-width="2.6" stroke-linecap="round"/><line x1="24" y1="32" x2="24" y2="38" stroke-width="2.6" stroke-linecap="round"/><line x1="18" y1="38" x2="30" y2="38" stroke-width="2.6" stroke-linecap="round"/></svg></span><span class="grad">Muft Lab</span></div>
   <div class="links">
     <a href="#dashboard" data-i18n="nav_tool">Tool</a>
+    <a href="#imagestudio">Image Studio</a>
     <a href="#how" class="hidemob" data-i18n="nav_how">How to use</a>
     <a href="#community" class="hidemob" data-i18n="nav_comm">Community</a>
     <select id="uiLang" title="Language" style="width:auto;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600;cursor:pointer">
@@ -471,6 +473,49 @@ PAGE = r"""<!doctype html>
   </div>
 </section>
 
+<!-- IMAGE STUDIO (TEST) -->
+<section class="dash" id="imagestudio">
+  <h2 class="sec-h">Image <span class="grad">Studio</span> <span class="soon">Test</span></h2>
+  <p class="sec-s">Master prompt + SRT ek jagah daalo &mdash; neeche image prompts ban jayenge.</p>
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:18px;max-width:1120px;margin:0 auto;align-items:start" class="imgwrap">
+
+    <!-- LEFT: settings + bulk button -->
+    <div class="panel">
+      <p class="ptitle">Settings</p>
+      <label>Provider</label>
+      <select id="imgProvider" onchange="fillModels();autoLoadModels()">
+        <option value="gemini">Gemini</option>
+        <option value="openrouter">OpenRouter</option>
+      </select>
+      <label style="margin-top:12px;display:block">Model</label>
+      <select id="imgModel" onchange="onModelChange()"></select>
+      <input type="text" id="imgModelCustom" placeholder="model id type karo (e.g. deepseek/deepseek-chat)" style="display:none;margin-top:8px">
+      <a href="#" id="imgLoadModels" onclick="loadGModels(event)" style="display:none;font-size:12px;color:var(--acc,#8a9bff);margin-top:6px">&#8635; Meri key ke available models load karo</a>
+      <label style="margin-top:12px;display:block">API Key</label>
+      <input type="password" id="imgKey" placeholder="apni API key paste karo" onblur="autoLoadModels()" onchange="autoLoadModels()">
+      <button type="button" id="imgTest" onclick="testKey()" style="margin-top:8px;font-size:13px;padding:7px 14px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">&#10003; Test API Key</button>
+      <div id="imgKeyStatus" style="font-size:12px;margin-top:6px"></div>
+      <p style="font-size:12px;color:var(--sub);margin-top:8px">API key sirf aap ke browser mein save hoti hai.</p>
+      <div style="border-top:1px solid var(--line);margin:18px 0 14px"></div>
+      <p class="ptitle">Bulk Image Generator</p>
+      <p style="font-size:13px;color:var(--sub);line-height:1.6">Neeche bane prompts <b>Copy</b> karke is tool mein paste karo. Pehli baar <b>Google login</b> &mdash; ek hi baar.</p>
+      <a class="gen" href="https://gemini.google.com/share/5d7cb64e5809" onclick="openBulkTool(event)" rel="noopener" style="text-decoration:none;display:block;text-align:center">&#128444;&#65039; Open Bulk Image Generator</a>
+    </div>
+
+    <!-- RIGHT: master prompt + SRT -> prompts -->
+    <div class="panel">
+      <p class="ptitle">Master Prompt</p>
+      <textarea id="imgUniversal" style="min-height:90px" placeholder="Apna master prompt yahan paste karo — jiske according SRT se image prompts banenge (style, look, rules...)">cinematic, dramatic lighting, highly detailed, 16:9</textarea>
+      <p class="ptitle" style="margin-top:14px">SRT / Script</p>
+      <textarea id="imgSrt" style="min-height:140px" placeholder="apni SRT file ka text ya script yahan paste karo"></textarea>
+      <button class="gen" id="imgGen" onclick="generatePrompts()">&#9889; Generate Image Prompts</button>
+      <div id="imgStatus"></div>
+      <p class="ptitle" style="margin-top:14px">Image Prompts <button type="button" onclick="copyPrompts()" style="float:right;font-size:12px;padding:4px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">Copy All</button></p>
+      <textarea id="imgOut" readonly style="min-height:170px" placeholder="yahan image prompts ban ke aayenge..."></textarea>
+    </div>
+  </div>
+</section>
+
 <!-- COMMUNITY -->
 <section class="community" id="community">
   <h2 class="sec-h" data-i18n-html="comm_h">Get <span class="grad">150+ Hours</span> Training</h2>
@@ -489,6 +534,115 @@ PAGE = r"""<!doctype html>
 <script>
 const $ = id => document.getElementById(id);
 let VOICES=[], MAP={}, selectedVoice=null;
+
+/* ---- Image Studio (TEST) ---- */
+const MODELS = {
+  gemini: ["gemini-1.5-flash","gemini-2.0-flash-lite","gemini-2.0-flash","gemini-1.5-flash-8b"],
+  openrouter: ["deepseek/deepseek-chat","google/gemini-2.0-flash-exp:free","google/gemini-flash-1.5-8b"]
+};
+function fillModels(saved){
+  const prov=$('imgProvider').value, sel=$('imgModel');
+  if(!sel) return;
+  sel.innerHTML='';
+  (MODELS[prov]||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+  const c=document.createElement('option');c.value='__custom__';c.textContent='Custom (type model id)';sel.appendChild(c);
+  if(saved){ sel.value=saved; if(sel.value!==saved){ sel.value='__custom__'; $('imgModelCustom').value=saved; } }
+  const ln=$('imgLoadModels'); if(ln) ln.style.display = (prov==='gemini')?'inline-block':'none';
+  onModelChange();
+}
+function testKey(){
+  const provider=$('imgProvider').value, apikey=$('imgKey').value.trim(), model=_curModel();
+  const st=$('imgKeyStatus'), btn=$('imgTest');
+  if(!apikey){ st.innerHTML='<span style="color:#f38ba8">API key daalo.</span>'; return; }
+  if(!model){ st.innerHTML='<span style="color:#f38ba8">Model select karo.</span>'; return; }
+  const old=btn.innerHTML; btn.disabled=true; btn.innerHTML='Test ho raha...';
+  st.innerHTML='<span style="color:#f9e2af">Test ho raha hai...</span>';
+  fetch('/testkey',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider,model,apikey})})
+   .then(r=>r.json()).then(j=>{
+     if(j.ok){ st.innerHTML='<span style="color:#a6e3a1">&#10003; Key chal rahi hai! Ab prompts bana sakte ho.</span>'; }
+     else{ st.innerHTML='<span style="color:#f38ba8">&#10007; '+(j.error||'Key kaam nahi kar rahi')+'</span>'; }
+   }).catch(err=>{ st.innerHTML='<span style="color:#f38ba8">Error: '+err+'</span>'; })
+   .finally(()=>{ btn.disabled=false; btn.innerHTML=old; });
+}
+function loadGModels(e, silent){
+  if(e) e.preventDefault();
+  const key=$('imgKey').value.trim(), st=$('imgKeyStatus');
+  if(!key){ if(!silent) st.innerHTML='<span style="color:#f38ba8">Pehle Gemini API key daalo.</span>'; return; }
+  if(!silent) st.innerHTML='<span style="color:#f9e2af">Models load ho rahe hain...</span>';
+  fetch('/gmodels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apikey:key})})
+   .then(r=>r.json()).then(j=>{
+     if(j.ok && j.models && j.models.length){
+       MODELS.gemini=j.models; fillModels(localStorage.getItem('ml_imgmodel'));
+       try{localStorage.setItem('ml_gmodels',JSON.stringify(j.models));}catch(x){}
+       if(!silent) st.innerHTML='<span style="color:#a6e3a1">'+j.models.length+' models load ho gaye.</span>';
+     } else if(!silent){ st.innerHTML='<span style="color:#f38ba8">'+(j.error||'koi model nahi mila')+'</span>'; }
+   }).catch(err=>{ if(!silent) st.innerHTML='<span style="color:#f38ba8">Error: '+err+'</span>'; });
+}
+function autoLoadModels(){
+  if($('imgProvider').value==='gemini' && $('imgKey').value.trim()) loadGModels(null, true);
+}
+function onModelChange(){
+  const cu=$('imgModelCustom');
+  if(cu) cu.style.display = ($('imgModel').value==='__custom__')?'block':'none';
+}
+function _curModel(){
+  const m=$('imgModel').value;
+  return (m==='__custom__') ? $('imgModelCustom').value.trim() : m;
+}
+function _imgLoad(){
+  try{
+    const k=localStorage.getItem('ml_imgkey'); if(k&&$('imgKey')) $('imgKey').value=k;
+    const p=localStorage.getItem('ml_imgprov'); if(p&&$('imgProvider')) $('imgProvider').value=p;
+    const u=localStorage.getItem('ml_imguni'); if(u&&$('imgUniversal')) $('imgUniversal').value=u;
+    const sr=localStorage.getItem('ml_imgsrt'); if(sr&&$('imgSrt')) $('imgSrt').value=sr;
+    const o=localStorage.getItem('ml_imgout'); if(o&&$('imgOut')) $('imgOut').value=o;
+    try{ const gm=localStorage.getItem('ml_gmodels'); if(gm){ const arr=JSON.parse(gm); if(arr&&arr.length) MODELS.gemini=arr; } }catch(x){}
+    fillModels(localStorage.getItem('ml_imgmodel'));
+    autoLoadModels();
+  }catch(e){ try{fillModels();}catch(x){} }
+}
+async function generatePrompts(){
+  const btn=$('imgGen'), st=$('imgStatus'), out=$('imgOut');
+  const provider=$('imgProvider').value, apikey=$('imgKey').value.trim(), model=_curModel();
+  const universal=$('imgUniversal').value.trim(), srt=$('imgSrt').value.trim();
+  try{
+    localStorage.setItem('ml_imgkey',apikey);
+    localStorage.setItem('ml_imgprov',provider);
+    localStorage.setItem('ml_imgmodel',model);
+    localStorage.setItem('ml_imguni',universal);
+  }catch(e){}
+  if(!apikey){ st.innerHTML='<span style="color:#f38ba8">API key daalo.</span>'; return; }
+  if(!model){ st.innerHTML='<span style="color:#f38ba8">Model select karo.</span>'; return; }
+  if(!srt){ st.innerHTML='<span style="color:#f38ba8">SRT ya script daalo.</span>'; return; }
+  btn.disabled=true; const old=btn.innerHTML; btn.innerHTML='Ban raha hai...';
+  st.innerHTML='<span style="color:#f9e2af">Prompts ban rahe hain, thoda ruko...</span>';
+  try{
+    const r=await fetch('/genprompts',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({provider,model,apikey,universal,srt})});
+    const j=await r.json();
+    if(j.ok){ out.value=j.prompts; try{localStorage.setItem('ml_imgsrt',srt);localStorage.setItem('ml_imgout',j.prompts);}catch(x){} st.innerHTML='<span style="color:#a6e3a1">Ho gaya &mdash; '+j.count+' prompts. Ab Copy karke bulk tool mein paste karo.</span>'; }
+    else{ st.innerHTML='<span style="color:#f38ba8">Error: '+(j.error||'fail')+'</span>'; }
+  }catch(e){ st.innerHTML='<span style="color:#f38ba8">Error: '+e+'</span>'; }
+  btn.disabled=false; btn.innerHTML=old;
+}
+const CANVAS_URL="https://gemini.google.com/share/5d7cb64e5809";
+function openBulkTool(e){
+  if(e) e.preventDefault();
+  try{
+    if(window.pywebview && window.pywebview.api && window.pywebview.api.open_canvas){
+      window.pywebview.api.open_canvas();   // app ke apne window mein kholo
+      return;
+    }
+  }catch(err){}
+  window.location.href = CANVAS_URL;         // USI tab mein kholo (naya tab nahi)
+}
+function copyPrompts(){
+  const out=$('imgOut'); if(!out.value){ return; }
+  out.select();
+  try{ navigator.clipboard.writeText(out.value); }catch(e){ document.execCommand('copy'); }
+  const st=$('imgStatus'); if(st) st.innerHTML='<span style="color:#a6e3a1">Copy ho gaya!</span>';
+}
+document.addEventListener('DOMContentLoaded',_imgLoad);
 
 /* ---- i18n (English / Roman Urdu) ---- */
 const I18N = {
@@ -808,6 +962,170 @@ async def preview(req):
     return web.Response(status=500, text=str(last_err))
 
 
+CANVAS_URL = "https://gemini.google.com/share/5d7cb64e5809"
+
+
+def _srt_segments(raw):
+    """SRT ya plain script ko scene-wise lines mein todo."""
+    raw = (raw or "").replace("\r", "").strip()
+    if not raw:
+        return []
+    segs = []
+    if "-->" in raw:
+        for block in re.split(r"\n\s*\n", raw):
+            lines = [l for l in block.split("\n") if l.strip()]
+            txt = [l for l in lines if "-->" not in l and not re.fullmatch(r"\d+", l.strip())]
+            if txt:
+                segs.append(" ".join(txt).strip())
+    else:
+        for l in raw.split("\n"):
+            if l.strip():
+                segs.append(l.strip())
+    return segs
+
+
+def _clean_prompts(text):
+    """Output ko saaf karo: number, timestamp, label hatao; har prompt ke beech blank line."""
+    text = (text or "").strip()
+    blocks = re.split(r"\n\s*\n", text)
+    if len(blocks) < 2:
+        parts = re.split(r"\n(?=\s*\d+\s*[.)]\s)", text)
+        if len(parts) > 1:
+            blocks = parts
+    out = []
+    for b in blocks:
+        b = b.strip()
+        if not b:
+            continue
+        b = re.sub(r"^\s*\d+\s*[.)]\s*", "", b)                      # "1. " / "1) "
+        b = re.sub(r"^\s*\d{1,2}:\d{2}(:\d{2})?\s*[|\-–]\s*", "", b)  # "00:07 | "
+        b = b.strip()
+        if b:
+            out.append(b)
+    return "\n\n".join(out)
+
+
+async def _call_openrouter(key, model, prompt):
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    body = {"model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.8}
+    headers = {"Authorization": "Bearer " + key, "Content-Type": "application/json"}
+    timeout = aiohttp.ClientTimeout(total=180)
+    async with aiohttp.ClientSession(timeout=timeout) as s:
+        async with s.post(url, json=body, headers=headers) as r:
+            j = await r.json()
+            if r.status != 200:
+                raise RuntimeError(j.get("error", {}).get("message", str(j)))
+            return j["choices"][0]["message"]["content"]
+
+
+async def _call_gemini(key, model, prompt):
+    model = model or "gemini-2.0-flash"
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           + model + ":generateContent?key=" + key)
+    body = {"contents": [{"parts": [{"text": prompt}]}]}
+    timeout = aiohttp.ClientTimeout(total=180)
+    async with aiohttp.ClientSession(timeout=timeout) as s:
+        async with s.post(url, json=body) as r:
+            j = await r.json()
+            if r.status != 200:
+                raise RuntimeError(j.get("error", {}).get("message", str(j)))
+            return j["candidates"][0]["content"]["parts"][0]["text"]
+
+
+async def gmodels(req):
+    """Gemini se aap ki key ke available writing models laao (sirf jo chalte hain)."""
+    try:
+        data = await req.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "bad request"}, status=400)
+    key = (data.get("apikey") or "").strip()
+    if not key:
+        return web.json_response({"ok": False, "error": "API key daalo"}, status=400)
+    url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + key
+    timeout = aiohttp.ClientTimeout(total=60)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as s:
+            async with s.get(url) as r:
+                j = await r.json()
+                if r.status != 200:
+                    raise RuntimeError(j.get("error", {}).get("message", str(j)))
+        out = []
+        for m in j.get("models", []):
+            methods = m.get("supportedGenerationMethods", [])
+            name = m.get("name", "").replace("models/", "")
+            if ("generateContent" in methods and name.startswith("gemini")
+                    and "vision" not in name and "embedding" not in name):
+                out.append(name)
+        out = sorted(set(out))
+        return web.json_response({"ok": True, "models": out})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)}, status=500)
+
+
+async def testkey(req):
+    """API key + model ko ek chhote call se test karo."""
+    try:
+        data = await req.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "bad request"}, status=400)
+    provider = (data.get("provider") or "gemini").lower()
+    model = (data.get("model") or "").strip()
+    key = (data.get("apikey") or "").strip()
+    if not key:
+        return web.json_response({"ok": False, "error": "API key daalo"})
+    try:
+        if provider == "openrouter":
+            if not model:
+                return web.json_response({"ok": False, "error": "model select karo"})
+            await _call_openrouter(key, model, "Reply with just: OK")
+        else:
+            await _call_gemini(key, model, "Reply with just: OK")
+        return web.json_response({"ok": True})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)})
+
+
+async def genprompts(req):
+    try:
+        data = await req.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "bad request"}, status=400)
+    provider = (data.get("provider") or "gemini").lower()
+    model = (data.get("model") or "").strip()
+    key = (data.get("apikey") or "").strip()
+    universal = (data.get("universal") or "").strip()
+    srt = (data.get("srt") or "").strip()
+    if not key:
+        return web.json_response({"ok": False, "error": "API key daalo"}, status=400)
+    segs = _srt_segments(srt)
+    if not segs:
+        return web.json_response({"ok": False, "error": "SRT ya script daalo"}, status=400)
+    joined = "\n".join("%d. %s" % (i + 1, s) for i, s in enumerate(segs))
+    style = universal or "cinematic, highly detailed, dramatic lighting"
+    prompt = (
+        "You are an expert image-prompt writer for faceless YouTube videos.\n"
+        "For EACH scene below, write ONE vivid image-generation prompt.\n"
+        "Apply this style to every prompt: " + style + "\n"
+        "Keep the SAME number of prompts and the SAME order as the scenes.\n"
+        "Write EACH prompt as one clean paragraph. Do NOT add numbers, timestamps, "
+        "or labels of any kind - only the prompt text.\n"
+        "Put a BLANK LINE between each prompt. Return ONLY the prompts, nothing else.\n\n"
+        "Scenes:\n" + joined
+    )
+    try:
+        if provider == "openrouter":
+            if not model:
+                return web.json_response({"ok": False, "error": "model select karo"}, status=400)
+            out = await _call_openrouter(key, model, prompt)
+        else:
+            out = await _call_gemini(key, model, prompt)
+        return web.json_response({"ok": True, "prompts": _clean_prompts(out), "count": len(segs)})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)}, status=500)
+
+
 def main():
     app = web.Application()
     app.add_routes([
@@ -820,6 +1138,9 @@ def main():
         web.get("/audio", audio),
         web.get("/openfolder", openfolder),
         web.get("/preview", preview),
+        web.post("/genprompts", genprompts),
+        web.post("/gmodels", gmodels),
+        web.post("/testkey", testkey),
     ])
     cloud_port = os.environ.get("PORT")
     if cloud_port:
