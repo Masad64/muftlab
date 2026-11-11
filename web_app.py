@@ -384,7 +384,7 @@ PAGE = r"""<!doctype html>
   <div class="brand"><span class="navbadge"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="20" y="9" width="8" height="16" rx="4"/><path d="M14 22 a10 10 0 0 0 20 0" fill="none" stroke-width="2.6" stroke-linecap="round"/><line x1="24" y1="32" x2="24" y2="38" stroke-width="2.6" stroke-linecap="round"/><line x1="18" y1="38" x2="30" y2="38" stroke-width="2.6" stroke-linecap="round"/></svg></span><span class="grad">Muft Lab</span></div>
   <div class="links">
     <a href="#dashboard" data-i18n="nav_tool">Tool</a>
-    <a href="#imagestudio">Image Studio</a>
+    <a href="#imagestudio">Image Jadoo</a>
     <a href="#how" class="hidemob" data-i18n="nav_how">How to use</a>
     <a href="#community" class="hidemob" data-i18n="nav_comm">Community</a>
     <select id="uiLang" title="Language" style="width:auto;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600;cursor:pointer">
@@ -475,7 +475,7 @@ PAGE = r"""<!doctype html>
 
 <!-- IMAGE STUDIO (TEST) -->
 <section class="dash" id="imagestudio">
-  <h2 class="sec-h">Image <span class="grad">Studio</span> <span class="soon">Test</span></h2>
+  <h2 class="sec-h">Image <span class="grad">Jadoo</span></h2>
   <p class="sec-s">Master prompt + SRT ek jagah daalo &mdash; neeche image prompts ban jayenge.</p>
   <div style="display:grid;grid-template-columns:300px 1fr;gap:18px;max-width:1120px;margin:0 auto;align-items:start" class="imgwrap">
 
