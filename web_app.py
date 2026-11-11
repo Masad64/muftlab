@@ -461,19 +461,7 @@ PAGE = r"""<!doctype html>
   <audio id="prev" style="display:none"></audio>
 </section>
 
-<!-- HOW TO -->
-<section class="how" id="how">
-  <h2 class="sec-h" data-i18n-html="how_h">How to <span class="grad">use</span></h2>
-  <p class="sec-s" data-i18n="how_s">Sirf 4 asaan steps.</p>
-  <div class="steps">
-    <div class="step"><div class="n">1</div><h4 data-i18n="s1t">Language & Voice chuno</h4><p data-i18n="s1d">Right side se apni language aur character choose karo. &#9654; dabakar voice pehle sun lo.</p></div>
-    <div class="step"><div class="n">2</div><h4 data-i18n="s2t">Script likho</h4><p data-i18n="s2d">Center box mein apni script paste karo &mdash; chhoti ho ya lambi, koi word limit nahi.</p></div>
-    <div class="step"><div class="n">3</div><h4 data-i18n="s3t">Adjust karo</h4><p data-i18n="s3d">Chaho to Speed, Pitch, Volume set karo. Subtitles (.srt) chahiye to tick kar do.</p></div>
-    <div class="step"><div class="n">4</div><h4 data-i18n="s4t">Generate & Download</h4><p data-i18n="s4d">Generate dabao &mdash; mp3 ban kar aa jayega, play karo ya download kar lo.</p></div>
-  </div>
-</section>
-
-<!-- IMAGE STUDIO (TEST) -->
+<!-- IMAGE JADOO -->
 <section class="dash" id="imagestudio">
   <h2 class="sec-h">Image <span class="grad">Jadoo</span></h2>
   <p class="sec-s">Master prompt + SRT ek jagah daalo &mdash; neeche image prompts ban jayenge.</p>
@@ -513,6 +501,30 @@ PAGE = r"""<!doctype html>
       <p class="ptitle" style="margin-top:14px">Image Prompts <button type="button" onclick="copyPrompts()" style="float:right;font-size:12px;padding:4px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">Copy All</button></p>
       <textarea id="imgOut" readonly style="min-height:170px" placeholder="yahan image prompts ban ke aayenge..."></textarea>
     </div>
+  </div>
+</section>
+
+<!-- HOW TO (whole tool) -->
+<section class="how" id="how">
+  <h2 class="sec-h">How to <span class="grad">use</span></h2>
+  <p class="sec-s">Voice aur Images &mdash; dono ka poora tareeqa.</p>
+
+  <h3 style="text-align:center;margin:6px 0 12px;font-size:19px;color:var(--fg)">&#127908; Voice Over</h3>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h4>Language &amp; Voice chuno</h4><p>Right side se apni language aur character choose karo. &#9654; dabakar voice pehle sun lo.</p></div>
+    <div class="step"><div class="n">2</div><h4>Script likho</h4><p>Center box mein apni script paste karo &mdash; chhoti ho ya lambi, koi word limit nahi.</p></div>
+    <div class="step"><div class="n">3</div><h4>Adjust karo</h4><p>Chaho to Speed, Pitch, Volume set karo. Subtitles (.srt) chahiye to tick kar do.</p></div>
+    <div class="step"><div class="n">4</div><h4>Generate &amp; Download</h4><p>Generate dabao &mdash; mp3 ban kar aa jayega, play karo ya download kar lo.</p></div>
+  </div>
+
+  <h3 style="text-align:center;margin:32px 0 12px;font-size:19px;color:var(--fg)">&#128444;&#65039; Image Jadoo</h3>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h4>Model + API Key</h4><p>Image Jadoo mein Provider chuno (Gemini ya OpenRouter), neeche se Model select karo, aur apni API key paste karo. &quot;Test API Key&quot; dabakar check kar lo ke chal rahi hai.</p></div>
+    <div class="step"><div class="n">2</div><h4>Master Prompt</h4><p>Upar wale box mein apna master prompt (image style / look / rules) likho &mdash; isi ke according saare image prompts banenge.</p></div>
+    <div class="step"><div class="n">3</div><h4>SRT / Script paste</h4><p>Neeche wale box mein apni SRT file ka text ya script paste karo.</p></div>
+    <div class="step"><div class="n">4</div><h4>Generate Prompts</h4><p>&quot;Generate Image Prompts&quot; dabao &mdash; har scene ka ek saaf prompt neeche ban jayega (no number, no timestamp &mdash; paste-ready).</p></div>
+    <div class="step"><div class="n">5</div><h4>Copy All</h4><p>&quot;Copy All&quot; dabao &mdash; saare prompts ek saath copy ho jayenge.</p></div>
+    <div class="step"><div class="n">6</div><h4>Bulk Images</h4><p>&quot;Open Bulk Image Generator&quot; dabao (pehli baar Google login &mdash; ek hi baar). Prompts paste karo &rarr; Generate Images &rarr; &quot;Download All (.zip)&quot; se saari images download.</p></div>
   </div>
 </section>
 
