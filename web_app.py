@@ -484,13 +484,9 @@ PAGE = r"""<!doctype html>
       <button type="button" id="imgTest" onclick="testKey()" style="margin-top:8px;font-size:13px;padding:7px 14px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">&#10003; Test API Key</button>
       <div id="imgKeyStatus" style="font-size:12px;margin-top:6px"></div>
       <p style="font-size:12px;color:var(--sub);margin-top:8px">API key sirf aap ke browser mein save hoti hai.</p>
-      <div style="border-top:1px solid var(--line);margin:18px 0 14px"></div>
-      <p class="ptitle">Bulk Image Generator</p>
-      <p style="font-size:13px;color:var(--sub);line-height:1.6">Neeche bane prompts <b>Copy</b> karke is tool mein paste karo. Pehli baar <b>Google login</b> &mdash; ek hi baar.</p>
-      <a class="gen" href="https://gemini.google.com/share/5d7cb64e5809" onclick="openBulkTool(event)" rel="noopener" style="text-decoration:none;display:block;text-align:center">&#128444;&#65039; Open Bulk Image Generator</a>
     </div>
 
-    <!-- RIGHT: master prompt + SRT -> prompts -->
+    <!-- RIGHT: master prompt + SRT -> prompts + bulk -->
     <div class="panel">
       <p class="ptitle">Master Prompt</p>
       <textarea id="imgUniversal" style="min-height:90px" placeholder="Apna master prompt yahan paste karo — jiske according SRT se image prompts banenge (style, look, rules...)">cinematic, dramatic lighting, highly detailed, 16:9</textarea>
@@ -500,6 +496,10 @@ PAGE = r"""<!doctype html>
       <div id="imgStatus"></div>
       <p class="ptitle" style="margin-top:14px">Image Prompts <button type="button" onclick="copyPrompts()" style="float:right;font-size:12px;padding:4px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">Copy All</button></p>
       <textarea id="imgOut" readonly style="min-height:170px" placeholder="yahan image prompts ban ke aayenge..."></textarea>
+      <div style="border-top:1px solid var(--line);margin:18px 0 14px"></div>
+      <p class="ptitle">Bulk Image Generator</p>
+      <p style="font-size:13px;color:var(--sub);line-height:1.6">Upar bane prompts <b>Copy All</b> karke is tool mein paste karo. Pehli baar <b>Google login</b> &mdash; ek hi baar, phir yaad rehta hai.</p>
+      <a class="gen" href="https://gemini.google.com/share/5d7cb64e5809" onclick="openBulkTool(event)" rel="noopener" style="text-decoration:none;display:block;text-align:center">&#128444;&#65039; Open Bulk Image Generator</a>
     </div>
   </div>
 </section>
