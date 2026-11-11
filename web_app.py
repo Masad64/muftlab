@@ -227,6 +227,7 @@ PAGE = r"""<!doctype html>
   .dashwrap{display:grid;grid-template-columns:250px 1fr 370px;gap:22px;
             max-width:1480px;margin:0 auto;}
   @media(max-width:980px){ .dashwrap{grid-template-columns:1fr} }
+  @media(max-width:1040px){ .imgwrap{grid-template-columns:1fr !important} }
   .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
   .ptitle{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);margin:0 0 12px;font-weight:700}
   /* left modes */
@@ -465,7 +466,7 @@ PAGE = r"""<!doctype html>
 <section class="dash" id="imagestudio">
   <h2 class="sec-h">Image <span class="grad">Jadoo</span></h2>
   <p class="sec-s">Master prompt + SRT ek jagah daalo &mdash; neeche image prompts ban jayenge.</p>
-  <div style="display:grid;grid-template-columns:300px 1fr;gap:18px;max-width:1120px;margin:0 auto;align-items:start" class="imgwrap">
+  <div style="display:grid;grid-template-columns:270px 1fr 280px;gap:16px;max-width:1300px;margin:0 auto;align-items:start" class="imgwrap">
 
     <!-- LEFT: settings + bulk button -->
     <div class="panel">
@@ -496,10 +497,14 @@ PAGE = r"""<!doctype html>
       <div id="imgStatus"></div>
       <p class="ptitle" style="margin-top:14px">Image Prompts <button type="button" onclick="copyPrompts()" style="float:right;font-size:12px;padding:4px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">Copy All</button></p>
       <textarea id="imgOut" readonly style="min-height:170px" placeholder="yahan image prompts ban ke aayenge..."></textarea>
-      <div style="border-top:1px solid var(--line);margin:18px 0 14px"></div>
+    </div>
+
+    <!-- RIGHT: bulk image generator -->
+    <div class="panel">
       <p class="ptitle">Bulk Image Generator</p>
-      <p style="font-size:13px;color:var(--sub);line-height:1.6">Upar bane prompts <b>Copy All</b> karke is tool mein paste karo. Pehli baar <b>Google login</b> &mdash; ek hi baar, phir yaad rehta hai.</p>
+      <p style="font-size:13px;color:var(--sub);line-height:1.6">Beech wale box se <b>Copy All</b> karke prompts is tool mein paste karo. Pehli baar <b>Google login</b> &mdash; ek hi baar, phir yaad rehta hai.</p>
       <a class="gen" href="https://gemini.google.com/share/5d7cb64e5809" onclick="openBulkTool(event)" rel="noopener" style="text-decoration:none;display:block;text-align:center">&#128444;&#65039; Open Bulk Image Generator</a>
+      <p style="font-size:12px;color:var(--sub);margin-top:10px">Tool mein: prompts paste &rarr; Generate Images &rarr; Download All (.zip).</p>
     </div>
   </div>
 </section>
