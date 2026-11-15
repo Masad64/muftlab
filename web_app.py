@@ -283,6 +283,19 @@ PAGE = r"""<!doctype html>
   .step h4{margin:0 0 6px;font-size:16px}
   .step p{margin:0;color:var(--sub);font-size:14px}
 
+  /* ---------- HOW-TO cards + popup ---------- */
+  .howcards{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;max-width:720px;margin:0 auto}
+  .howcard{flex:1 1 240px;max-width:330px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px 24px;text-align:center;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s}
+  .howcard:hover{transform:translateY(-4px)}
+  .howcard .hcico{font-size:42px;margin-bottom:10px}
+  .howcard h4{margin:0 0 4px;font-size:19px;color:var(--fg)}
+  .howcard p{margin:0 0 12px;color:var(--sub);font-size:14px}
+  .howcard .hclink{color:var(--fill);font-weight:600;font-size:14px}
+  .howmodal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;padding:20px}
+  .howbox{background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:30px 26px 24px;max-width:920px;width:100%;max-height:86vh;overflow:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .howclose{position:absolute;top:10px;right:16px;background:none;border:none;font-size:30px;line-height:1;cursor:pointer;color:var(--sub)}
+  .howclose:hover{color:var(--fg)}
+
   /* ---------- COMMUNITY ---------- */
   .community{background:var(--bg2)}
   .cwrap{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
@@ -314,7 +327,7 @@ PAGE = r"""<!doctype html>
   .hero{background:var(--bg)}
   .dash,.community{background:var(--bg2)}
   .dash{padding-top:30px}
-  .panel,.ccard,.step{background:var(--bg);border:none;border-radius:22px;
+  .panel,.ccard,.step,.howcard{background:var(--bg);border:none;border-radius:22px;
      box-shadow:8px 8px 18px var(--sd),-8px -8px 18px var(--sl)}
   textarea,input[type=text],select,#lang,#fname{background:var(--bg);border:none;color:var(--fg);
      border-radius:14px;box-shadow:inset 4px 4px 8px var(--sd),inset -4px -4px 8px var(--sl)}
@@ -509,29 +522,55 @@ PAGE = r"""<!doctype html>
   </div>
 </section>
 
-<!-- HOW TO (whole tool) -->
+<!-- HOW TO (compact cards + popup) -->
 <section class="how" id="how">
   <h2 class="sec-h">How to <span class="grad">use</span></h2>
-  <p class="sec-s">Voice aur Images &mdash; dono ka poora tareeqa.</p>
-
-  <h3 style="text-align:center;margin:6px 0 12px;font-size:19px;color:var(--fg)">&#127908; Voice Over</h3>
-  <div class="steps">
-    <div class="step"><div class="n">1</div><h4>Language &amp; Voice chuno</h4><p>Right side se apni language aur character choose karo. &#9654; dabakar voice pehle sun lo.</p></div>
-    <div class="step"><div class="n">2</div><h4>Script likho</h4><p>Center box mein apni script paste karo &mdash; chhoti ho ya lambi, koi word limit nahi.</p></div>
-    <div class="step"><div class="n">3</div><h4>Adjust karo</h4><p>Chaho to Speed, Pitch, Volume set karo. Subtitles (.srt) chahiye to tick kar do.</p></div>
-    <div class="step"><div class="n">4</div><h4>Generate &amp; Download</h4><p>Generate dabao &mdash; mp3 ban kar aa jayega, play karo ya download kar lo.</p></div>
-  </div>
-
-  <h3 style="text-align:center;margin:32px 0 12px;font-size:19px;color:var(--fg)">&#128444;&#65039; Image Jadoo</h3>
-  <div class="steps">
-    <div class="step"><div class="n">1</div><h4>Model + API Key</h4><p>Image Jadoo mein Provider chuno (Gemini ya OpenRouter), neeche se Model select karo, aur apni API key paste karo. &quot;Test API Key&quot; dabakar check kar lo ke chal rahi hai.</p></div>
-    <div class="step"><div class="n">2</div><h4>Master Prompt</h4><p>Upar wale box mein apna master prompt (image style / look / rules) likho &mdash; isi ke according saare image prompts banenge.</p></div>
-    <div class="step"><div class="n">3</div><h4>SRT / Script paste</h4><p>Neeche wale box mein apni SRT file ka text ya script paste karo.</p></div>
-    <div class="step"><div class="n">4</div><h4>Generate Prompts</h4><p>&quot;Generate Image Prompts&quot; dabao &mdash; har scene ka ek saaf prompt neeche ban jayega (no number, no timestamp &mdash; paste-ready).</p></div>
-    <div class="step"><div class="n">5</div><h4>Copy All</h4><p>&quot;Copy All&quot; dabao &mdash; saare prompts ek saath copy ho jayenge.</p></div>
-    <div class="step"><div class="n">6</div><h4>Bulk Images</h4><p>&quot;Open Bulk Image Generator&quot; dabao (pehli baar Google login &mdash; ek hi baar). Prompts paste karo &rarr; Generate Images &rarr; &quot;Download All (.zip)&quot; se saari images download.</p></div>
+  <p class="sec-s">Card par click karo &mdash; saare steps pop-up mein khul jayenge.</p>
+  <div class="howcards">
+    <div class="howcard" onclick="openHow('voice')">
+      <div class="hcico">&#127908;</div>
+      <h4>Voice Over</h4>
+      <p>Voice banane ka poora tareeqa</p>
+      <span class="hclink">Steps dekho &rarr;</span>
+    </div>
+    <div class="howcard" onclick="openHow('image')">
+      <div class="hcico">&#128444;&#65039;</div>
+      <h4>Image Jadoo</h4>
+      <p>Images banane ka poora tareeqa</p>
+      <span class="hclink">Steps dekho &rarr;</span>
+    </div>
   </div>
 </section>
+
+<!-- HOW TO popups -->
+<div class="howmodal" id="howVoice" onclick="if(event.target===this)closeHow()">
+  <div class="howbox">
+    <button class="howclose" type="button" onclick="closeHow()" aria-label="Close">&times;</button>
+    <h3 style="text-align:center;margin:0 0 2px;font-size:22px;color:var(--fg)">&#127908; Voice Over</h3>
+    <p style="text-align:center;color:var(--sub);margin:0 0 20px;font-size:14px">Kaise use karein</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h4>Language &amp; Voice chuno</h4><p>Right side se apni language aur character choose karo. &#9654; dabakar voice pehle sun lo.</p></div>
+      <div class="step"><div class="n">2</div><h4>Script likho</h4><p>Center box mein apni script paste karo &mdash; chhoti ho ya lambi, koi word limit nahi.</p></div>
+      <div class="step"><div class="n">3</div><h4>Adjust karo</h4><p>Chaho to Speed, Pitch, Volume set karo. Subtitles (.srt) chahiye to tick kar do.</p></div>
+      <div class="step"><div class="n">4</div><h4>Generate &amp; Download</h4><p>Generate dabao &mdash; mp3 ban kar aa jayega, play karo ya download kar lo.</p></div>
+    </div>
+  </div>
+</div>
+<div class="howmodal" id="howImage" onclick="if(event.target===this)closeHow()">
+  <div class="howbox">
+    <button class="howclose" type="button" onclick="closeHow()" aria-label="Close">&times;</button>
+    <h3 style="text-align:center;margin:0 0 2px;font-size:22px;color:var(--fg)">&#128444;&#65039; Image Jadoo</h3>
+    <p style="text-align:center;color:var(--sub);margin:0 0 20px;font-size:14px">Kaise use karein</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h4>Model + API Key</h4><p>Image Jadoo mein Provider chuno (Gemini ya OpenRouter), neeche se Model select karo, aur apni API key paste karo. &quot;Test API Key&quot; dabakar check kar lo ke chal rahi hai.</p></div>
+      <div class="step"><div class="n">2</div><h4>Master Prompt</h4><p>Upar wale box mein apna master prompt (image style / look / rules) likho &mdash; isi ke according saare image prompts banenge.</p></div>
+      <div class="step"><div class="n">3</div><h4>SRT / Script paste</h4><p>Neeche wale box mein apni SRT file ka text ya script paste karo.</p></div>
+      <div class="step"><div class="n">4</div><h4>Generate Prompts</h4><p>&quot;Generate Image Prompts&quot; dabao &mdash; har scene ka ek saaf prompt neeche ban jayega (no number, no timestamp &mdash; paste-ready).</p></div>
+      <div class="step"><div class="n">5</div><h4>Copy All</h4><p>&quot;Copy All&quot; dabao &mdash; saare prompts ek saath copy ho jayenge.</p></div>
+      <div class="step"><div class="n">6</div><h4>Bulk Images</h4><p>&quot;Open Bulk Image Generator&quot; dabao (pehli baar Google login &mdash; ek hi baar). Prompts paste karo &rarr; Generate Images &rarr; &quot;Download All (.zip)&quot; se saari images download.</p></div>
+    </div>
+  </div>
+</div>
 
 <!-- COMMUNITY -->
 <section class="community" id="community">
@@ -660,6 +699,17 @@ function copyPrompts(){
   const st=$('imgStatus'); if(st) st.innerHTML='<span style="color:#a6e3a1">Copy ho gaya!</span>';
 }
 document.addEventListener('DOMContentLoaded',_imgLoad);
+
+/* ---- How-to popups ---- */
+function openHow(which){
+  closeHow();
+  const m = (which==='voice') ? $('howVoice') : $('howImage');
+  if(m) m.style.display='flex';
+}
+function closeHow(){
+  ['howVoice','howImage'].forEach(function(id){ const m=$(id); if(m) m.style.display='none'; });
+}
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeHow(); });
 
 /* ---- i18n (English / Roman Urdu) ---- */
 const I18N = {
