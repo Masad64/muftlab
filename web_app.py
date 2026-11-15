@@ -478,66 +478,66 @@ PAGE = r"""<!doctype html>
 <!-- IMAGE JADOO -->
 <section class="dash" id="imagestudio">
   <h2 class="sec-h">Image <span class="grad">Jadoo</span></h2>
-  <p class="sec-s">Master prompt + SRT ek jagah daalo &mdash; neeche image prompts ban jayenge.</p>
+  <p class="sec-s" data-i18n="ij_sub">Master prompt + SRT ek jagah daalo &mdash; neeche image prompts ban jayenge.</p>
   <div style="display:grid;grid-template-columns:270px 1fr 280px;gap:16px;max-width:1300px;margin:0 auto;align-items:start" class="imgwrap">
 
-    <!-- LEFT: settings + bulk button -->
+    <!-- LEFT: settings -->
     <div class="panel">
-      <p class="ptitle">Settings</p>
-      <label>Provider</label>
+      <p class="ptitle" data-i18n="ij_settings">Settings</p>
+      <label data-i18n="ij_provider">Provider</label>
       <select id="imgProvider" onchange="fillModels();autoLoadModels()">
         <option value="gemini">Gemini</option>
         <option value="openrouter">OpenRouter</option>
       </select>
-      <label style="margin-top:12px;display:block">Model</label>
+      <label style="margin-top:12px;display:block" data-i18n="ij_model">Model</label>
       <select id="imgModel" onchange="onModelChange()"></select>
-      <input type="text" id="imgModelCustom" placeholder="model id type karo (e.g. deepseek/deepseek-chat)" style="display:none;margin-top:8px">
-      <a href="#" id="imgLoadModels" onclick="loadGModels(event)" style="display:none;font-size:12px;color:var(--acc,#8a9bff);margin-top:6px">&#8635; Meri key ke available models load karo</a>
-      <label style="margin-top:12px;display:block">API Key</label>
-      <input type="password" id="imgKey" placeholder="apni API key paste karo" onblur="autoLoadModels()" onchange="autoLoadModels()">
-      <button type="button" id="imgTest" onclick="testKey()" style="margin-top:8px;font-size:13px;padding:7px 14px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">&#10003; Test API Key</button>
+      <input type="text" id="imgModelCustom" data-i18n-ph="ij_custom_ph" placeholder="model id type karo (e.g. deepseek/deepseek-chat)" style="display:none;margin-top:8px">
+      <a href="#" id="imgLoadModels" onclick="loadGModels(event)" data-i18n="ij_loadmodels" style="display:none;font-size:12px;color:var(--acc,#8a9bff);margin-top:6px">&#8635; Meri key ke available models load karo</a>
+      <label style="margin-top:12px;display:block" data-i18n="ij_apikey">API Key</label>
+      <input type="password" id="imgKey" data-i18n-ph="ij_apikey_ph" placeholder="apni API key paste karo" onblur="autoLoadModels()" onchange="autoLoadModels()">
+      <button type="button" id="imgTest" onclick="testKey()" data-i18n="ij_testkey" style="margin-top:8px;font-size:13px;padding:7px 14px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">&#10003; Test API Key</button>
       <div id="imgKeyStatus" style="font-size:12px;margin-top:6px"></div>
-      <p style="font-size:12px;color:var(--sub);margin-top:8px">API key sirf aap ke browser mein save hoti hai.</p>
+      <p style="font-size:12px;color:var(--sub);margin-top:8px" data-i18n="ij_keynote">API key sirf aap ke browser mein save hoti hai.</p>
     </div>
 
-    <!-- RIGHT: master prompt + SRT -> prompts + bulk -->
+    <!-- MIDDLE: master prompt + SRT -> prompts -->
     <div class="panel">
-      <p class="ptitle">Master Prompt</p>
-      <textarea id="imgUniversal" style="min-height:90px" placeholder="Apna master prompt yahan paste karo — jiske according SRT se image prompts banenge (style, look, rules...)">cinematic, dramatic lighting, highly detailed, 16:9</textarea>
-      <p class="ptitle" style="margin-top:14px">SRT / Script</p>
-      <textarea id="imgSrt" style="min-height:140px" placeholder="apni SRT file ka text ya script yahan paste karo"></textarea>
-      <button class="gen" id="imgGen" onclick="generatePrompts()">&#9889; Generate Image Prompts</button>
+      <p class="ptitle" data-i18n="ij_master">Master Prompt</p>
+      <textarea id="imgUniversal" style="min-height:90px" data-i18n-ph="ij_master_ph" placeholder="Apna master prompt yahan paste karo — jiske according SRT se image prompts banenge (style, look, rules...)">cinematic, dramatic lighting, highly detailed, 16:9</textarea>
+      <p class="ptitle" style="margin-top:14px" data-i18n="ij_srt">SRT / Script</p>
+      <textarea id="imgSrt" style="min-height:140px" data-i18n-ph="ij_srt_ph" placeholder="apni SRT file ka text ya script yahan paste karo"></textarea>
+      <button class="gen" id="imgGen" onclick="generatePrompts()" data-i18n="ij_genbtn">&#9889; Generate Image Prompts</button>
       <div id="imgStatus"></div>
-      <p class="ptitle" style="margin-top:14px">Image Prompts <button type="button" onclick="copyPrompts()" style="float:right;font-size:12px;padding:4px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">Copy All</button></p>
-      <textarea id="imgOut" readonly style="min-height:170px" placeholder="yahan image prompts ban ke aayenge..."></textarea>
+      <p class="ptitle" style="margin-top:14px"><span data-i18n="ij_prompts">Image Prompts</span> <button type="button" onclick="copyPrompts()" data-i18n="ij_copyall" style="float:right;font-size:12px;padding:4px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;cursor:pointer">Copy All</button></p>
+      <textarea id="imgOut" readonly style="min-height:170px" data-i18n-ph="ij_out_ph" placeholder="yahan image prompts ban ke aayenge..."></textarea>
     </div>
 
     <!-- RIGHT: bulk image generator -->
     <div class="panel">
-      <p class="ptitle">Bulk Image Generator</p>
-      <p style="font-size:13px;color:var(--sub);line-height:1.6">Beech wale box se <b>Copy All</b> karke prompts is tool mein paste karo. Pehli baar <b>Google login</b> &mdash; ek hi baar, phir yaad rehta hai.</p>
-      <a class="gen" href="https://gemini.google.com/share/5d7cb64e5809" onclick="openBulkTool(event)" rel="noopener" style="text-decoration:none;display:block;text-align:center">&#128444;&#65039; Open Bulk Image Generator</a>
-      <p style="font-size:12px;color:var(--sub);margin-top:10px">Tool mein: prompts paste &rarr; Generate Images &rarr; Download All (.zip).</p>
+      <p class="ptitle" data-i18n="ij_bulk">Bulk Image Generator</p>
+      <p style="font-size:13px;color:var(--sub);line-height:1.6" data-i18n-html="ij_bulktext">Beech wale box se <b>Copy All</b> karke prompts is tool mein paste karo. Pehli baar <b>Google login</b> &mdash; ek hi baar, phir yaad rehta hai.</p>
+      <a class="gen" href="https://gemini.google.com/share/5d7cb64e5809" onclick="openBulkTool(event)" rel="noopener" data-i18n="ij_bulkbtn" style="text-decoration:none;display:block;text-align:center">&#128444;&#65039; Open Bulk Image Generator</a>
+      <p style="font-size:12px;color:var(--sub);margin-top:10px" data-i18n="ij_bulknote">Tool mein: prompts paste &rarr; Generate Images &rarr; Download All (.zip).</p>
     </div>
   </div>
 </section>
 
 <!-- HOW TO (compact cards + popup) -->
 <section class="how" id="how">
-  <h2 class="sec-h">How to <span class="grad">use</span></h2>
-  <p class="sec-s">Card par click karo &mdash; saare steps pop-up mein khul jayenge.</p>
+  <h2 class="sec-h" data-i18n-html="how_h">How to <span class="grad">use</span></h2>
+  <p class="sec-s" data-i18n="how_sub2">Card par click karo &mdash; saare steps pop-up mein khul jayenge.</p>
   <div class="howcards">
     <div class="howcard" onclick="openHow('voice')">
       <div class="hcico">&#127908;</div>
-      <h4>Voice Over</h4>
-      <p>Voice banane ka poora tareeqa</p>
-      <span class="hclink">Steps dekho &rarr;</span>
+      <h4 data-i18n="hc_voice">Voice Over</h4>
+      <p data-i18n="hc_voice_d">Voice banane ka poora tareeqa</p>
+      <span class="hclink" data-i18n="hc_link">Steps dekho &rarr;</span>
     </div>
     <div class="howcard" onclick="openHow('image')">
       <div class="hcico">&#128444;&#65039;</div>
-      <h4>Image Jadoo</h4>
-      <p>Images banane ka poora tareeqa</p>
-      <span class="hclink">Steps dekho &rarr;</span>
+      <h4 data-i18n="hc_img">Image Jadoo</h4>
+      <p data-i18n="hc_img_d">Images banane ka poora tareeqa</p>
+      <span class="hclink" data-i18n="hc_link">Steps dekho &rarr;</span>
     </div>
   </div>
 </section>
@@ -547,12 +547,12 @@ PAGE = r"""<!doctype html>
   <div class="howbox">
     <button class="howclose" type="button" onclick="closeHow()" aria-label="Close">&times;</button>
     <h3 style="text-align:center;margin:0 0 2px;font-size:22px;color:var(--fg)">&#127908; Voice Over</h3>
-    <p style="text-align:center;color:var(--sub);margin:0 0 20px;font-size:14px">Kaise use karein</p>
+    <p style="text-align:center;color:var(--sub);margin:0 0 20px;font-size:14px" data-i18n="hp_howuse">Kaise use karein</p>
     <div class="steps">
-      <div class="step"><div class="n">1</div><h4>Language &amp; Voice chuno</h4><p>Right side se apni language aur character choose karo. &#9654; dabakar voice pehle sun lo.</p></div>
-      <div class="step"><div class="n">2</div><h4>Script likho</h4><p>Center box mein apni script paste karo &mdash; chhoti ho ya lambi, koi word limit nahi.</p></div>
-      <div class="step"><div class="n">3</div><h4>Adjust karo</h4><p>Chaho to Speed, Pitch, Volume set karo. Subtitles (.srt) chahiye to tick kar do.</p></div>
-      <div class="step"><div class="n">4</div><h4>Generate &amp; Download</h4><p>Generate dabao &mdash; mp3 ban kar aa jayega, play karo ya download kar lo.</p></div>
+      <div class="step"><div class="n">1</div><h4 data-i18n="s1t">Language &amp; Voice chuno</h4><p data-i18n="s1d">Right side se apni language aur character choose karo. &#9654; dabakar voice pehle sun lo.</p></div>
+      <div class="step"><div class="n">2</div><h4 data-i18n="s2t">Script likho</h4><p data-i18n="s2d">Center box mein apni script paste karo &mdash; chhoti ho ya lambi, koi word limit nahi.</p></div>
+      <div class="step"><div class="n">3</div><h4 data-i18n="s3t">Adjust karo</h4><p data-i18n="s3d">Chaho to Speed, Pitch, Volume set karo. Subtitles (.srt) chahiye to tick kar do.</p></div>
+      <div class="step"><div class="n">4</div><h4 data-i18n="s4t">Generate &amp; Download</h4><p data-i18n="s4d">Generate dabao &mdash; mp3 ban kar aa jayega, play karo ya download kar lo.</p></div>
     </div>
   </div>
 </div>
@@ -560,14 +560,14 @@ PAGE = r"""<!doctype html>
   <div class="howbox">
     <button class="howclose" type="button" onclick="closeHow()" aria-label="Close">&times;</button>
     <h3 style="text-align:center;margin:0 0 2px;font-size:22px;color:var(--fg)">&#128444;&#65039; Image Jadoo</h3>
-    <p style="text-align:center;color:var(--sub);margin:0 0 20px;font-size:14px">Kaise use karein</p>
+    <p style="text-align:center;color:var(--sub);margin:0 0 20px;font-size:14px" data-i18n="hp_howuse">Kaise use karein</p>
     <div class="steps">
-      <div class="step"><div class="n">1</div><h4>Model + API Key</h4><p>Image Jadoo mein Provider chuno (Gemini ya OpenRouter), neeche se Model select karo, aur apni API key paste karo. &quot;Test API Key&quot; dabakar check kar lo ke chal rahi hai.</p></div>
-      <div class="step"><div class="n">2</div><h4>Master Prompt</h4><p>Upar wale box mein apna master prompt (image style / look / rules) likho &mdash; isi ke according saare image prompts banenge.</p></div>
-      <div class="step"><div class="n">3</div><h4>SRT / Script paste</h4><p>Neeche wale box mein apni SRT file ka text ya script paste karo.</p></div>
-      <div class="step"><div class="n">4</div><h4>Generate Prompts</h4><p>&quot;Generate Image Prompts&quot; dabao &mdash; har scene ka ek saaf prompt neeche ban jayega (no number, no timestamp &mdash; paste-ready).</p></div>
-      <div class="step"><div class="n">5</div><h4>Copy All</h4><p>&quot;Copy All&quot; dabao &mdash; saare prompts ek saath copy ho jayenge.</p></div>
-      <div class="step"><div class="n">6</div><h4>Bulk Images</h4><p>&quot;Open Bulk Image Generator&quot; dabao (pehli baar Google login &mdash; ek hi baar). Prompts paste karo &rarr; Generate Images &rarr; &quot;Download All (.zip)&quot; se saari images download.</p></div>
+      <div class="step"><div class="n">1</div><h4 data-i18n="ij_s1t">Model + API Key</h4><p data-i18n="ij_s1d">Image Jadoo mein Provider chuno (Gemini ya OpenRouter), neeche se Model select karo, aur apni API key paste karo. &quot;Test API Key&quot; dabakar check kar lo ke chal rahi hai.</p></div>
+      <div class="step"><div class="n">2</div><h4 data-i18n="ij_s2t">Master Prompt</h4><p data-i18n="ij_s2d">Upar wale box mein apna master prompt (image style / look / rules) likho &mdash; isi ke according saare image prompts banenge.</p></div>
+      <div class="step"><div class="n">3</div><h4 data-i18n="ij_s3t">SRT / Script paste</h4><p data-i18n="ij_s3d">Neeche wale box mein apni SRT file ka text ya script paste karo.</p></div>
+      <div class="step"><div class="n">4</div><h4 data-i18n="ij_s4t">Generate Prompts</h4><p data-i18n="ij_s4d">&quot;Generate Image Prompts&quot; dabao &mdash; har scene ka ek saaf prompt neeche ban jayega (no number, no timestamp &mdash; paste-ready).</p></div>
+      <div class="step"><div class="n">5</div><h4 data-i18n="ij_s5t">Copy All</h4><p data-i18n="ij_s5d">&quot;Copy All&quot; dabao &mdash; saare prompts ek saath copy ho jayenge.</p></div>
+      <div class="step"><div class="n">6</div><h4 data-i18n="ij_s6t">Bulk Images</h4><p data-i18n="ij_s6d">&quot;Open Bulk Image Generator&quot; dabao (pehli baar Google login &mdash; ek hi baar). Prompts paste karo &rarr; Generate Images &rarr; &quot;Download All (.zip)&quot; se saari images download.</p></div>
     </div>
   </div>
 </div>
@@ -732,6 +732,30 @@ const I18N = {
   s2t:"Write your script", s2d:"Paste your script in the center box — short or long, no word limit.",
   s3t:"Adjust", s3d:"Optionally set Speed, Pitch, Volume. Tick Subtitles (.srt) if you want captions.",
   s4t:"Generate & Download", s4d:"Press Generate — the mp3 is ready, play it or download it.",
+  ij_sub:"Master prompt + SRT in one place — image prompts appear below.",
+  ij_settings:"Settings", ij_provider:"Provider", ij_model:"Model",
+  ij_loadmodels:"↻ Load the models available on your key",
+  ij_apikey:"API Key", ij_apikey_ph:"paste your API key", ij_testkey:"✓ Test API Key",
+  ij_keynote:"Your API key is saved only in your browser.",
+  ij_master:"Master Prompt", ij_master_ph:"Paste your master prompt here — all image prompts follow this (style, look, rules...)",
+  ij_srt:"SRT / Script", ij_srt_ph:"Paste your SRT file text or script here",
+  ij_genbtn:"⚡ Generate Image Prompts", ij_prompts:"Image Prompts", ij_copyall:"Copy All",
+  ij_out_ph:"image prompts will appear here...",
+  ij_custom_ph:"type a model id (e.g. deepseek/deepseek-chat)",
+  ij_bulk:"Bulk Image Generator",
+  ij_bulktext:"Press <b>Copy All</b> in the middle box, then paste the prompts into this tool. First time: <b>Google login</b> — just once.",
+  ij_bulkbtn:"🖼️ Open Bulk Image Generator",
+  ij_bulknote:"In the tool: paste prompts → Generate Images → Download All (.zip).",
+  how_sub2:"Click a card — all steps open in a pop-up.",
+  hc_voice:"Voice Over", hc_voice_d:"How to make a voiceover",
+  hc_img:"Image Jadoo", hc_img_d:"How to make images",
+  hc_link:"See steps →", hp_howuse:"How to use",
+  ij_s1t:"Model + API Key", ij_s1d:"In Image Jadoo pick a Provider (Gemini or OpenRouter), select a Model below, and paste your API key. Press \"Test API Key\" to check it works.",
+  ij_s2t:"Master Prompt", ij_s2d:"Write your master prompt (image style / look / rules) in the top box — all image prompts follow it.",
+  ij_s3t:"Paste SRT / Script", ij_s3d:"Paste your SRT file text or script in the lower box.",
+  ij_s4t:"Generate Prompts", ij_s4d:"Press \"Generate Image Prompts\" — one clean prompt per scene appears below (no number, no timestamp — paste-ready).",
+  ij_s5t:"Copy All", ij_s5d:"Press \"Copy All\" — all prompts copy at once.",
+  ij_s6t:"Bulk Images", ij_s6d:"Press \"Open Bulk Image Generator\" (first time Google login — once). Paste prompts → Generate Images → \"Download All (.zip)\".",
   comm_h:"Get <span class='grad'>150+ Hours</span> Training", comm_s:"Learn YT Automation and AI",
   wa_t:"WhatsApp", wa_s:"Official Number", wa_btn:"Contact Us",
   fb_t:"Facebook Group", fb_s:"Creators community", fb_btn:"Join Group",
@@ -762,6 +786,30 @@ const I18N = {
   s2t:"Script likho", s2d:"Center box mein apni script paste karo — chhoti ho ya lambi, koi word limit nahi.",
   s3t:"Adjust karo", s3d:"Chaho to Speed, Pitch, Volume set karo. Subtitles (.srt) chahiye to tick kar do.",
   s4t:"Generate & Download", s4d:"Generate dabao — mp3 ban kar aa jayega, play karo ya download kar lo.",
+  ij_sub:"Master prompt + SRT ek jagah daalo — neeche image prompts ban jayenge.",
+  ij_settings:"Settings", ij_provider:"Provider", ij_model:"Model",
+  ij_loadmodels:"↻ Meri key ke available models load karo",
+  ij_apikey:"API Key", ij_apikey_ph:"apni API key paste karo", ij_testkey:"✓ Test API Key",
+  ij_keynote:"API key sirf aap ke browser mein save hoti hai.",
+  ij_master:"Master Prompt", ij_master_ph:"Apna master prompt yahan paste karo — jiske according SRT se image prompts banenge (style, look, rules...)",
+  ij_srt:"SRT / Script", ij_srt_ph:"apni SRT file ka text ya script yahan paste karo",
+  ij_genbtn:"⚡ Generate Image Prompts", ij_prompts:"Image Prompts", ij_copyall:"Copy All",
+  ij_out_ph:"yahan image prompts ban ke aayenge...",
+  ij_custom_ph:"model id type karo (e.g. deepseek/deepseek-chat)",
+  ij_bulk:"Bulk Image Generator",
+  ij_bulktext:"Beech wale box se <b>Copy All</b> karke prompts is tool mein paste karo. Pehli baar <b>Google login</b> — ek hi baar, phir yaad rehta hai.",
+  ij_bulkbtn:"🖼️ Open Bulk Image Generator",
+  ij_bulknote:"Tool mein: prompts paste → Generate Images → Download All (.zip).",
+  how_sub2:"Card par click karo — saare steps pop-up mein khul jayenge.",
+  hc_voice:"Voice Over", hc_voice_d:"Voice banane ka poora tareeqa",
+  hc_img:"Image Jadoo", hc_img_d:"Images banane ka poora tareeqa",
+  hc_link:"Steps dekho →", hp_howuse:"Kaise use karein",
+  ij_s1t:"Model + API Key", ij_s1d:"Image Jadoo mein Provider chuno (Gemini ya OpenRouter), neeche se Model select karo, aur apni API key paste karo. \"Test API Key\" dabakar check kar lo ke chal rahi hai.",
+  ij_s2t:"Master Prompt", ij_s2d:"Upar wale box mein apna master prompt (image style / look / rules) likho — isi ke according saare image prompts banenge.",
+  ij_s3t:"SRT / Script paste", ij_s3d:"Neeche wale box mein apni SRT file ka text ya script paste karo.",
+  ij_s4t:"Generate Prompts", ij_s4d:"\"Generate Image Prompts\" dabao — har scene ka ek saaf prompt neeche ban jayega (no number, no timestamp — paste-ready).",
+  ij_s5t:"Copy All", ij_s5d:"\"Copy All\" dabao — saare prompts ek saath copy ho jayenge.",
+  ij_s6t:"Bulk Images", ij_s6d:"\"Open Bulk Image Generator\" dabao (pehli baar Google login — ek hi baar). Prompts paste karo → Generate Images → \"Download All (.zip)\" se saari images download.",
   comm_h:"Hasil karo <span class='grad'>150+ Hours</span> Training", comm_s:"YT Automation aur AI seekho",
   wa_t:"WhatsApp", wa_s:"Official Number", wa_btn:"Rabta Karein",
   fb_t:"Facebook Group", fb_s:"Creators community", fb_btn:"Group Join Karein",
