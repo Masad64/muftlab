@@ -6,6 +6,7 @@ Auto-splits long scripts into safe chunks => koi word limit nahi.
 import asyncio
 import base64
 import os
+import random
 import re
 import ssl
 import tempfile
@@ -45,6 +46,7 @@ else:
         DESKTOP = _desktop_dir()
 HOSTNAME = "awaaz.studio"   # hosts file mein 127.0.0.1 pe mapped (local only)
 MAX_CHARS = 1200
+_FILE_DIRS = {}   # filename -> jis folder mein save hui (playback/history ke liye)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 CERT = os.path.join(BASE, "certs", "server.crt")
@@ -105,7 +107,7 @@ def split_text(text, max_chars=MAX_CHARS):
 async def synth_chunk(ch_text, voice, rate, pitch, volume, want_subs, sem):
     async with sem:
         last_err = None
-        for _ in range(3):
+        for attempt in range(6):   # Microsoft kabhi-kabhi "No audio" deta hai -> zyada retries
             try:
                 com = edge_tts.Communicate(
                     ch_text, voice, rate=rate, pitch=pitch, volume=volume,
@@ -119,10 +121,13 @@ async def synth_chunk(ch_text, voice, rate, pitch, volume, want_subs, sem):
                     elif want_subs and ch["type"] == "WordBoundary":
                         bounds.append(dict(ch))
                         end = max(end, ch["offset"] + ch["duration"])
-                return bytes(audio), bounds, end
+                if audio:
+                    return bytes(audio), bounds, end
+                last_err = RuntimeError("No audio received")
             except Exception as e:
                 last_err = e
-                await asyncio.sleep(1)
+            # backoff + thoda random (rate-limit se bachne ke liye)
+            await asyncio.sleep(min(1.2 * (attempt + 1), 5) + random.uniform(0, 0.6))
         raise last_err
 
 
@@ -771,6 +776,8 @@ const I18N = {
   characters:"characters", words:"words", test_tip:"Click to test this voice",
   st_script:"Write a script first.", st_voice:"Choose a voice.",
   st_gen:"Generating audio...", st_done:"Done: ", st_done2:"  (saved to Desktop)",
+  st_pick:"Choose a folder to save the voice...", st_cancel:"Cancelled — no folder chosen.",
+  st_busy:"Voice service is busy right now. Wait ~10 seconds and press Generate again. (Keep internet on and your PC date/time correct.)",
   st_err:"Error (try again): ", st_testfail:"Voice test failed - try again",
   st_voicesfail:"Voices failed to load (check internet): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"No voiceovers yet.", remove:"Remove", open_folder:"Open Muft Lab folder", saved_at:"Saved in this folder:"
  },
@@ -825,6 +832,8 @@ const I18N = {
   characters:"characters", words:"words", test_tip:"Voice test karne ke liye click karo",
   st_script:"Pehle script likho.", st_voice:"Voice choose karo.",
   st_gen:"Aawaz ban rahi hai...", st_done:"Ban gayi: ", st_done2:"  (Desktop pe save)",
+  st_pick:"Voice save karne ke liye folder chuno...", st_cancel:"Cancel — koi folder nahi chuna.",
+  st_busy:"Voice service abhi busy hai. ~10 second ruk ke dobara Generate dabao. (Internet on rahe aur PC ka date/time sahi ho.)",
   st_err:"Error (dobara try karo): ", st_testfail:"Voice test fail - dobara try karo",
   st_voicesfail:"Voices load fail (internet check karo): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"Abhi koi voiceover nahi.", remove:"Remove", open_folder:"Muft Lab folder kholo", saved_at:"Is folder mein save hua:"
  }
@@ -942,6 +951,12 @@ $('gen').onclick=async()=>{
   const text=$('text').value.trim();
   if(!text){ setStatus(t('st_script'),'var(--warn)'); return; }
   if(!selectedVoice){ setStatus(t('st_voice'),'var(--warn)'); return; }
+  var savedir="";
+  if(window.pywebview && window.pywebview.api && window.pywebview.api.pick_folder){
+    setStatus(t('st_pick'),'var(--warn)');
+    try{ savedir = await window.pywebview.api.pick_folder(); }catch(e){ savedir=""; }
+    if(!savedir){ setStatus(t('st_cancel'),'var(--sub)'); return; }
+  }
   $('gen').disabled=true; $('gen').textContent=t('generating'); $('player').innerHTML='';
   let secs=0; setStatus(t('st_gen')+' (0s)','var(--warn)');
   const timer=setInterval(()=>{secs++; setStatus(t('st_gen')+' ('+secs+'s)','var(--warn)');},1000);
@@ -949,12 +964,12 @@ $('gen').onclick=async()=>{
     const res=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({text,voice:selectedVoice,
         rate:sign($('speed').value)+'%',pitch:sign($('pitch').value)+'Hz',volume:sign($('vol').value)+'%',
-        filename:$('fname').value.trim()||'voiceover',subs:$('subs').checked})});
+        filename:$('fname').value.trim()||'voiceover',subs:$('subs').checked,savedir:savedir})});
     const d=await res.json(); clearInterval(timer);
     if(d.ok){
       setStatus('✅ '+t('st_done')+d.file+(d.subs?t('saved_srt'):''),'var(--good)');
       const u='/audio?f='+encodeURIComponent(d.file)+'&t='+Date.now();
-      var folder=d.folder||'';
+      var folder=d.folder||''; window._lastFolder=folder;
       var html='<audio controls autoplay src="'+u+'"></audio>'+
         '<div class="savebox">📁 '+t('saved_at')+'<br><b class="savepath">'+folder+'</b></div>'+
         '<div><button type="button" class="gen" onclick="openFolder()" style="margin-top:8px">📂 '+t('open_folder')+'</button></div>'+
@@ -964,12 +979,13 @@ $('gen').onclick=async()=>{
       html+='</div>';
       $('player').innerHTML=html;
       addHist(d.file, d.srt);
-    } else setStatus(t('st_err')+(d.error||''),'var(--bad)');
+    } else if(d.busy){ setStatus(t('st_busy'),'var(--warn)'); }
+      else setStatus(t('st_err')+(d.error||''),'var(--bad)');
   }catch(e){ clearInterval(timer); setStatus('Error: '+e,'var(--bad)'); }
   $('gen').disabled=false; $('gen').innerHTML=t('gen_btn');
 };
 function setStatus(t,c){const s=$('status');s.textContent=t;s.style.color=c||'var(--fg)';}
-function openFolder(){ fetch('/openfolder').catch(function(){}); }
+function openFolder(){ var f=window._lastFolder||''; fetch('/openfolder'+(f?('?d='+encodeURIComponent(f)):'')).catch(function(){}); }
 init().catch(e=>setStatus(t('st_voicesfail')+e,'var(--bad)'));
 (function(){ var L="ur"; try{L=localStorage.getItem("ml_lang")||"ur";}catch(e){} if(!I18N[L])L="ur"; $('uiLang').value=L; setUiLang(L); })();
 $('uiLang').onchange=function(){ setUiLang($('uiLang').value); renderHist(); };
@@ -1033,28 +1049,43 @@ async def generate(req):
     if not text or not voice:
         return web.json_response({"ok": False, "error": "text/voice missing"}, status=400)
 
-    path = os.path.join(DESKTOP, fn + ".mp3")
-    srt = os.path.join(DESKTOP, fn + ".srt")
+    # Student jo folder chune wahan save; warna default Muft Lab folder
+    savedir = (b.get("savedir") or "").strip()
+    outdir = savedir if (savedir and os.path.isdir(savedir)) else DESKTOP
+    path = os.path.join(outdir, fn + ".mp3")
+    srt = os.path.join(outdir, fn + ".srt")
     try:
         await synthesize(text, voice, rate, pitch, volume, path, srt, subs)
+        _FILE_DIRS[fn + ".mp3"] = outdir
+        if subs:
+            _FILE_DIRS[fn + ".srt"] = outdir
         return web.json_response({"ok": True, "file": fn + ".mp3",
                                   "srt": (fn + ".srt") if subs else None,
-                                  "subs": subs, "path": path, "folder": DESKTOP})
+                                  "subs": subs, "path": path, "folder": outdir})
     except Exception as e:
-        return web.json_response({"ok": False, "error": str(e)}, status=500)
+        msg = str(e)
+        busy = "no audio" in msg.lower() or "audio was received" in msg.lower()
+        return web.json_response({"ok": False, "error": msg, "busy": busy}, status=500)
 
 
 async def audio(req):
     fn = os.path.basename(req.query.get("f", "voiceover.mp3"))
-    path = os.path.join(DESKTOP, fn)
-    if os.path.exists(path):
-        return web.FileResponse(path)
+    cand = []
+    d = _FILE_DIRS.get(fn)
+    if d:
+        cand.append(os.path.join(d, fn))
+    cand.append(os.path.join(DESKTOP, fn))
+    for p in cand:
+        if os.path.exists(p):
+            return web.FileResponse(p)
     return web.Response(status=404)
 
 
 async def openfolder(req):
+    d = req.query.get("d", "")
+    target = d if (d and d in set(_FILE_DIRS.values()) and os.path.isdir(d)) else DESKTOP
     try:
-        os.startfile(DESKTOP)
+        os.startfile(target)
     except Exception:
         pass
     return web.json_response({"ok": True})
