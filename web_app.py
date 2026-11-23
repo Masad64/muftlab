@@ -37,7 +37,12 @@ if CLOUD:
     except Exception:
         pass
 else:
-    DESKTOP = _desktop_dir()
+    # Saari voices ek saaf folder mein: Desktop\Muft Lab (dhoondna aasan)
+    DESKTOP = os.path.join(_desktop_dir(), "Muft Lab")
+    try:
+        os.makedirs(DESKTOP, exist_ok=True)
+    except Exception:
+        DESKTOP = _desktop_dir()
 HOSTNAME = "awaaz.studio"   # hosts file mein 127.0.0.1 pe mapped (local only)
 MAX_CHARS = 1200
 
@@ -256,6 +261,8 @@ PAGE = r"""<!doctype html>
   #status{font-size:14px;margin-top:10px;min-height:20px}
   #player audio{width:100%;margin-top:12px}
   .dl{display:inline-block;margin-top:8px;color:var(--good);font-weight:700;font-size:14px}
+  .savebox{margin-top:12px;font-size:13px;color:var(--sub);line-height:1.6}
+  .savepath{color:var(--fg);font-size:13px;word-break:break-all;background:var(--card2);padding:4px 8px;border-radius:8px;display:inline-block;margin-top:4px}
   .count{font-size:12px;color:var(--sub);margin-top:6px;text-align:right}
   /* right: voices */
   .vlist{max-height:440px;overflow:auto;margin-top:4px;padding-right:4px}
@@ -765,7 +772,7 @@ const I18N = {
   st_script:"Write a script first.", st_voice:"Choose a voice.",
   st_gen:"Generating audio...", st_done:"Done: ", st_done2:"  (saved to Desktop)",
   st_err:"Error (try again): ", st_testfail:"Voice test failed - try again",
-  st_voicesfail:"Voices failed to load (check internet): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"No voiceovers yet.", remove:"Remove", open_folder:"Open folder (Desktop)"
+  st_voicesfail:"Voices failed to load (check internet): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"No voiceovers yet.", remove:"Remove", open_folder:"Open Muft Lab folder", saved_at:"Saved in this folder:"
  },
  ur:{
   nav_tool:"Tool", nav_how:"Kaise istemal karein", nav_comm:"Community",
@@ -819,7 +826,7 @@ const I18N = {
   st_script:"Pehle script likho.", st_voice:"Voice choose karo.",
   st_gen:"Aawaz ban rahi hai...", st_done:"Ban gayi: ", st_done2:"  (Desktop pe save)",
   st_err:"Error (dobara try karo): ", st_testfail:"Voice test fail - dobara try karo",
-  st_voicesfail:"Voices load fail (internet check karo): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"Abhi koi voiceover nahi.", remove:"Remove", open_folder:"Folder kholo (Desktop)"
+  st_voicesfail:"Voices load fail (internet check karo): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"Abhi koi voiceover nahi.", remove:"Remove", open_folder:"Muft Lab folder kholo", saved_at:"Is folder mein save hua:"
  }
 };
 let curLang="ur";
@@ -945,13 +952,16 @@ $('gen').onclick=async()=>{
         filename:$('fname').value.trim()||'voiceover',subs:$('subs').checked})});
     const d=await res.json(); clearInterval(timer);
     if(d.ok){
-      setStatus(t('st_done')+d.file+(d.subs?t('saved_srt'):'')+t('st_done2'),'var(--good)');
+      setStatus('✅ '+t('st_done')+d.file+(d.subs?t('saved_srt'):''),'var(--good)');
       const u='/audio?f='+encodeURIComponent(d.file)+'&t='+Date.now();
+      var folder=d.folder||'';
       var html='<audio controls autoplay src="'+u+'"></audio>'+
-        '<div><a class="dl" href="'+u+'" download="'+d.file+'">'+t('dl')+'</a></div>';
+        '<div class="savebox">📁 '+t('saved_at')+'<br><b class="savepath">'+folder+'</b></div>'+
+        '<div><button type="button" class="gen" onclick="openFolder()" style="margin-top:8px">📂 '+t('open_folder')+'</button></div>'+
+        '<div style="margin-top:6px"><a class="dl" href="'+u+'" download="'+d.file+'">'+t('dl')+'</a>';
       if(d.srt){ var us='/audio?f='+encodeURIComponent(d.srt)+'&t='+Date.now();
-        html+='<div><a class="dl" href="'+us+'" download="'+d.srt+'">'+t('dl_srt')+'</a></div>'; }
-      html+='<div><a class="dl" style="cursor:pointer" onclick="openFolder()">📁 '+t('open_folder')+'</a></div>';
+        html+=' &nbsp; <a class="dl" href="'+us+'" download="'+d.srt+'">'+t('dl_srt')+'</a>'; }
+      html+='</div>';
       $('player').innerHTML=html;
       addHist(d.file, d.srt);
     } else setStatus(t('st_err')+(d.error||''),'var(--bad)');
@@ -1029,7 +1039,7 @@ async def generate(req):
         await synthesize(text, voice, rate, pitch, volume, path, srt, subs)
         return web.json_response({"ok": True, "file": fn + ".mp3",
                                   "srt": (fn + ".srt") if subs else None,
-                                  "subs": subs, "path": path})
+                                  "subs": subs, "path": path, "folder": DESKTOP})
     except Exception as e:
         return web.json_response({"ok": False, "error": str(e)}, status=500)
 
