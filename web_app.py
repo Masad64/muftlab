@@ -308,6 +308,12 @@ PAGE = r"""<!doctype html>
   .howbox{background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:30px 26px 24px;max-width:920px;width:100%;max-height:86vh;overflow:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.45)}
   .howclose{position:absolute;top:10px;right:16px;background:none;border:none;font-size:30px;line-height:1;cursor:pointer;color:var(--sub)}
   .howclose:hover{color:var(--fg)}
+  .vltable{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border-radius:14px;overflow:hidden}
+  .vltable th,.vltable td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  .vltable th{background:var(--card2);color:var(--fg);font-weight:700;font-size:13px}
+  .vltable td{color:var(--sub)}
+  .vltable td b{color:var(--fg)}
+  .vlplay{cursor:pointer;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;width:34px;height:34px;border-radius:10px;font-size:14px}
 
   /* ---------- COMMUNITY ---------- */
   .community{background:var(--bg2)}
@@ -446,7 +452,7 @@ PAGE = r"""<!doctype html>
     <div class="panel">
       <p class="ptitle" data-i18n="left_tools">Tools</p>
       <div class="mode active"><span class="ico">&#128483;</span> <span data-i18n="left_tts">Text to Speech</span></div>
-      <div class="mode" id="vlibBtn" onclick="toggleVoiceLib()"><span class="ico">&#127908;</span> <span data-i18n="left_vlib">Voice Library</span></div>
+      <div class="mode" id="vlibBtn" onclick="openVoiceLib()"><span class="ico">&#127908;</span> <span data-i18n="left_vlib">Voice Library</span></div>
       <div class="mode" style="cursor:default;opacity:.7"><span class="ico">&#127760;</span> <span data-i18n="left_translate">Translate</span> <span class="soon" data-i18n="soon">Soon</span></div>
       <div class="mode" style="cursor:default;opacity:.7"><span class="ico">&#129302;</span> <span data-i18n="left_clone">Voice Clone</span> <span class="soon" data-i18n="soon">Soon</span></div>
     </div>
@@ -534,6 +540,20 @@ PAGE = r"""<!doctype html>
     </div>
   </div>
 </section>
+
+<!-- VOICE LIBRARY (popup) -->
+<div class="howmodal" id="vlibModal" onclick="if(event.target===this)closeVoiceLib()">
+  <div class="howbox" style="max-width:1100px">
+    <button class="howclose" type="button" onclick="closeVoiceLib()" aria-label="Close">&times;</button>
+    <h3 style="text-align:center;margin:0 0 2px;font-size:24px;color:var(--fg)">Voice <span class="grad">Library</span></h3>
+    <p style="text-align:center;color:var(--sub);margin:0 0 16px;font-size:14px">Kaunsi voice kis niche ke liye best &mdash; ▶ sun kar choose karo.</p>
+    <input type="text" id="vlSearch" oninput="renderVoiceLib()" placeholder="Search: niche, character ya language (e.g. horror, Guy, Urdu)" style="margin-bottom:14px">
+    <div style="overflow-x:auto">
+      <table class="vltable" id="vlTable"></table>
+    </div>
+    <audio id="vlAudio" style="display:none"></audio>
+  </div>
+</div>
 
 <!-- HOW TO (compact cards + popup) -->
 <section class="how" id="how">
@@ -780,6 +800,7 @@ const I18N = {
   st_pick:"Choose a folder to save the voice...", st_cancel:"Cancelled — no folder chosen.",
   st_saving:"Saving to your folder...", dl2:"Download",
   st_busy:"Voice service is busy right now. Wait ~10 seconds and press Generate again. (Keep internet on and your PC date/time correct.)",
+  st_retry:"Service busy — retrying automatically, please wait",
   st_err:"Error (try again): ", st_testfail:"Voice test failed - try again",
   st_voicesfail:"Voices failed to load (check internet): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"No voiceovers yet.", remove:"Remove", open_folder:"Open Muft Lab folder", saved_at:"Saved in this folder:"
  },
@@ -837,6 +858,7 @@ const I18N = {
   st_pick:"Voice save karne ke liye folder chuno...", st_cancel:"Cancel — koi folder nahi chuna.",
   st_saving:"Aap ke folder mein save ho raha hai...", dl2:"Download",
   st_busy:"Voice service abhi busy hai. ~10 second ruk ke dobara Generate dabao. (Internet on rahe aur PC ka date/time sahi ho.)",
+  st_retry:"Service busy — khud dobara koshish ho rahi hai, ruko",
   st_err:"Error (dobara try karo): ", st_testfail:"Voice test fail - dobara try karo",
   st_voicesfail:"Voices load fail (internet check karo): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"Abhi koi voiceover nahi.", remove:"Remove", open_folder:"Muft Lab folder kholo", saved_at:"Is folder mein save hua:"
  }
@@ -958,12 +980,20 @@ $('gen').onclick=async()=>{
   $('gen').disabled=true; $('gen').textContent=t('generating'); $('player').innerHTML='';
   let secs=0; setStatus(t('st_gen')+' (0s)','var(--warn)');
   const timer=setInterval(()=>{secs++; setStatus(t('st_gen')+' ('+secs+'s)','var(--warn)');},1000);
+  var reqBody=JSON.stringify({text,voice:selectedVoice,
+    rate:sign($('speed').value)+'%',pitch:sign($('pitch').value)+'Hz',volume:sign($('vol').value)+'%',
+    filename:$('fname').value.trim()||'voiceover',subs:$('subs').checked,savedir:savedir});
   try{
-    const res=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text,voice:selectedVoice,
-        rate:sign($('speed').value)+'%',pitch:sign($('pitch').value)+'Hz',volume:sign($('vol').value)+'%',
-        filename:$('fname').value.trim()||'voiceover',subs:$('subs').checked,savedir:savedir})});
-    const d=await res.json(); clearInterval(timer);
+    var d=null;
+    for(var attempt=1; attempt<=3; attempt++){   // khud dobara koshish (student ko error na dikhe)
+      if(attempt>1){ setStatus(t('st_retry')+' ('+attempt+'/3)','var(--warn)'); await new Promise(function(r){setTimeout(r,3500);}); }
+      try{
+        var res=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:reqBody});
+        d=await res.json();
+      }catch(err){ d={ok:false,busy:true}; }
+      if(d.ok || !d.busy) break;   // ban gayi, ya non-busy error -> ruk jao
+    }
+    clearInterval(timer);
     if(d.ok){
       setStatus('✅ '+t('st_done')+d.file+(d.subs?t('saved_srt'):''),'var(--good)');
       const u='/audio?f='+encodeURIComponent(d.file)+'&t='+Date.now();
@@ -997,6 +1027,65 @@ async function saveToFolder(file, srt){
     else{ st.textContent=t('st_err')+(j.error||''); st.style.color='var(--bad)'; }
   }catch(e){ st.textContent='Error: '+e; st.style.color='var(--bad)'; }
 }
+/* ---- Voice Library (niche guide) ---- */
+const VOICELIB = [
+  {v:"en-US-GuyNeural", n:"Guy", l:"English (US)", g:"Male", niche:"Documentary, History, Horror, Motivation", note:"Deep, mature, authoritative"},
+  {v:"en-US-ChristopherNeural", n:"Christopher", l:"English (US)", g:"Male", niche:"Documentary, News, Business, Facts", note:"Warm, confident, professional"},
+  {v:"en-US-EricNeural", n:"Eric", l:"English (US)", g:"Male", niche:"Explainer, Tech, Educational", note:"Calm, clear, neutral"},
+  {v:"en-US-RogerNeural", n:"Roger", l:"English (US)", g:"Male", niche:"Reddit stories, Vlog, Commentary", note:"Casual, natural, relatable"},
+  {v:"en-US-BrianNeural", n:"Brian", l:"English (US)", g:"Male", niche:"Reddit, Podcast, Conversational", note:"Friendly, modern, easy"},
+  {v:"en-US-AndrewNeural", n:"Andrew", l:"English (US)", g:"Male", niche:"Podcast, AI content, Conversational", note:"Warm, trustworthy"},
+  {v:"en-US-SteffanNeural", n:"Steffan", l:"English (US)", g:"Male", niche:"Storytelling, Audiobook", note:"Narrative, engaging"},
+  {v:"en-US-AriaNeural", n:"Aria", l:"English (US)", g:"Female", niche:"Explainer, Tutorial, Facts", note:"Clear, pleasant, versatile"},
+  {v:"en-US-JennyNeural", n:"Jenny", l:"English (US)", g:"Female", niche:"Storytelling, Vlog, Lifestyle", note:"Friendly, warm"},
+  {v:"en-US-MichelleNeural", n:"Michelle", l:"English (US)", g:"Female", niche:"Sleep stories, Meditation, ASMR", note:"Soft, soothing, calm"},
+  {v:"en-US-AvaNeural", n:"Ava", l:"English (US)", g:"Female", niche:"Podcast, Conversational, Modern", note:"Expressive, natural"},
+  {v:"en-US-EmmaNeural", n:"Emma", l:"English (US)", g:"Female", niche:"Beauty, Lifestyle, Storytelling", note:"Gentle, youthful"},
+  {v:"en-US-AnaNeural", n:"Ana", l:"English (US)", g:"Female (child)", niche:"Kids content, Nursery, Cartoons", note:"Child voice"},
+  {v:"en-GB-RyanNeural", n:"Ryan", l:"English (UK)", g:"Male", niche:"Documentary, History, Luxury", note:"British, refined"},
+  {v:"en-GB-ThomasNeural", n:"Thomas", l:"English (UK)", g:"Male", niche:"Mystery, Crime, Documentary", note:"British, mature, serious"},
+  {v:"en-GB-SoniaNeural", n:"Sonia", l:"English (UK)", g:"Female", niche:"Storytelling, Fashion, History", note:"British, elegant"},
+  {v:"en-GB-LibbyNeural", n:"Libby", l:"English (UK)", g:"Female", niche:"Lifestyle, Vlog, Beauty", note:"British, youthful"},
+  {v:"en-IN-PrabhatNeural", n:"Prabhat", l:"English (India)", g:"Male", niche:"Tech, Business, Explainer (desi)", note:"Indian accent, clear"},
+  {v:"en-IN-NeerjaNeural", n:"Neerja", l:"English (India)", g:"Female", niche:"News, Explainer (desi)", note:"Indian accent, professional"},
+  {v:"en-IN-NeerjaExpressiveNeural", n:"Neerja Expressive", l:"English (India)", g:"Female", niche:"Storytelling, Emotional (desi)", note:"Expressive, emotional"},
+  {v:"ur-PK-AsadNeural", n:"Asad", l:"Urdu (Pakistan)", g:"Male", niche:"Islamic, History, Documentary, Motivation", note:"Clear, mature Urdu"},
+  {v:"ur-PK-UzmaNeural", n:"Uzma", l:"Urdu (Pakistan)", g:"Female", niche:"Dramas, Storytelling, Emotional", note:"Soft, expressive Urdu"},
+  {v:"ur-IN-SalmanNeural", n:"Salman", l:"Urdu (India)", g:"Male", niche:"News, Narration, Shayari", note:"Formal Urdu"},
+  {v:"ur-IN-GulNeural", n:"Gul", l:"Urdu (India)", g:"Female", niche:"Storytelling, Poetry", note:"Warm Urdu"},
+  {v:"hi-IN-MadhurNeural", n:"Madhur", l:"Hindi (India)", g:"Male", niche:"Documentary, Motivation, Facts", note:"Clear, strong Hindi"},
+  {v:"hi-IN-SwaraNeural", n:"Swara", l:"Hindi (India)", g:"Female", niche:"Storytelling, Vlog, Bhakti", note:"Warm, pleasant Hindi"},
+  {v:"ar-SA-HamedNeural", n:"Hamed", l:"Arabic (Saudi)", g:"Male", niche:"Islamic, Documentary, News", note:"Formal Arabic"},
+  {v:"ar-EG-ShakirNeural", n:"Shakir", l:"Arabic (Egypt)", g:"Male", niche:"Storytelling, Drama, News", note:"Expressive Egyptian"},
+  {v:"ar-SA-ZariyahNeural", n:"Zariyah", l:"Arabic (Saudi)", g:"Female", niche:"Storytelling, Kids", note:"Soft Arabic"}
+];
+function playVoice(v, btn){
+  var a=$('vlAudio'); if(!a) return;
+  if(btn){ btn.textContent='…'; }
+  a.src='/preview?voice='+encodeURIComponent(v)+'&t='+Date.now();
+  a.play().catch(function(){});
+  a.onplaying=function(){ if(btn) btn.textContent='▶'; };
+  a.onerror=function(){ if(btn) btn.textContent='▶'; };
+}
+function renderVoiceLib(){
+  var t=$('vlTable'); if(!t) return;
+  var q=((($('vlSearch')||{}).value)||'').toLowerCase().trim();
+  var rows=VOICELIB.filter(function(x){
+    if(!q) return true;
+    return (x.n+' '+x.l+' '+x.g+' '+x.niche+' '+x.note).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<tr><th></th><th>Character</th><th>Language</th><th>Gender</th><th>Best for (Niche)</th><th>Note</th></tr>';
+  h+=rows.map(function(x){
+    return '<tr><td><button class="vlplay" title="Sun lo" onclick="playVoice(\''+x.v+'\',this)">▶</button></td>'+
+      '<td><b>'+x.n+'</b></td><td>'+x.l+'</td><td>'+x.g+'</td><td>'+x.niche+'</td><td>'+x.note+'</td></tr>';
+  }).join('');
+  if(!rows.length){ h+='<tr><td colspan="6" style="text-align:center;color:var(--sub)">Koi match nahi mila.</td></tr>'; }
+  t.innerHTML=h;
+}
+function openVoiceLib(){ var m=$('vlibModal'); if(m){ m.style.display='flex'; document.body.style.overflow='hidden'; renderVoiceLib(); } }
+function closeVoiceLib(){ var m=$('vlibModal'); if(m) m.style.display='none'; var a=$('vlAudio'); if(a){try{a.pause();}catch(e){}} document.body.style.overflow=''; }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeVoiceLib(); });
+renderVoiceLib();
 init().catch(e=>setStatus(t('st_voicesfail')+e,'var(--bad)'));
 (function(){ var L="ur"; try{L=localStorage.getItem("ml_lang")||"ur";}catch(e){} if(!I18N[L])L="ur"; $('uiLang').value=L; setUiLang(L); })();
 $('uiLang').onchange=function(){ setUiLang($('uiLang').value); renderHist(); };
