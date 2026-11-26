@@ -8,6 +8,7 @@ import base64
 import os
 import random
 import re
+import shutil
 import ssl
 import tempfile
 import threading
@@ -45,7 +46,7 @@ else:
     except Exception:
         DESKTOP = _desktop_dir()
 HOSTNAME = "awaaz.studio"   # hosts file mein 127.0.0.1 pe mapped (local only)
-MAX_CHARS = 1200
+MAX_CHARS = 400   # chhote chunks => zyada parallel => tez (sentence boundary par split)
 _FILE_DIRS = {}   # filename -> jis folder mein save hui (playback/history ke liye)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -134,7 +135,7 @@ async def synth_chunk(ch_text, voice, rate, pitch, volume, want_subs, sem):
 async def synthesize(text, voice, rate, pitch, volume, path, srt_path, want_subs):
     # Saare chunks EK SATH (parallel) banao -> bohot tez. Order gather se barqarar.
     chunks = split_text(text)
-    sem = asyncio.Semaphore(4)   # 4 tukde ek saath (sabse tez + safe); 5 pe Microsoft rate-limit karta hai
+    sem = asyncio.Semaphore(6)   # 6 tukde ek saath (tez); retries rate-limit se bacha lete hain
     results = await asyncio.gather(
         *[synth_chunk(c, voice, rate, pitch, volume, want_subs, sem) for c in chunks])
     with open(path, "wb") as f:
@@ -777,6 +778,7 @@ const I18N = {
   st_script:"Write a script first.", st_voice:"Choose a voice.",
   st_gen:"Generating audio...", st_done:"Done: ", st_done2:"  (saved to Desktop)",
   st_pick:"Choose a folder to save the voice...", st_cancel:"Cancelled — no folder chosen.",
+  st_saving:"Saving to your folder...", dl2:"Save to folder",
   st_busy:"Voice service is busy right now. Wait ~10 seconds and press Generate again. (Keep internet on and your PC date/time correct.)",
   st_err:"Error (try again): ", st_testfail:"Voice test failed - try again",
   st_voicesfail:"Voices failed to load (check internet): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"No voiceovers yet.", remove:"Remove", open_folder:"Open Muft Lab folder", saved_at:"Saved in this folder:"
@@ -833,6 +835,7 @@ const I18N = {
   st_script:"Pehle script likho.", st_voice:"Voice choose karo.",
   st_gen:"Aawaz ban rahi hai...", st_done:"Ban gayi: ", st_done2:"  (Desktop pe save)",
   st_pick:"Voice save karne ke liye folder chuno...", st_cancel:"Cancel — koi folder nahi chuna.",
+  st_saving:"Aap ke folder mein save ho raha hai...", dl2:"Folder mein save karo",
   st_busy:"Voice service abhi busy hai. ~10 second ruk ke dobara Generate dabao. (Internet on rahe aur PC ka date/time sahi ho.)",
   st_err:"Error (dobara try karo): ", st_testfail:"Voice test fail - dobara try karo",
   st_voicesfail:"Voices load fail (internet check karo): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"Abhi koi voiceover nahi.", remove:"Remove", open_folder:"Muft Lab folder kholo", saved_at:"Is folder mein save hua:"
@@ -952,11 +955,6 @@ $('gen').onclick=async()=>{
   if(!text){ setStatus(t('st_script'),'var(--warn)'); return; }
   if(!selectedVoice){ setStatus(t('st_voice'),'var(--warn)'); return; }
   var savedir="";
-  if(window.pywebview && window.pywebview.api && window.pywebview.api.pick_folder){
-    setStatus(t('st_pick'),'var(--warn)');
-    try{ savedir = await window.pywebview.api.pick_folder(); }catch(e){ savedir=""; }
-    if(!savedir){ setStatus(t('st_cancel'),'var(--sub)'); return; }
-  }
   $('gen').disabled=true; $('gen').textContent=t('generating'); $('player').innerHTML='';
   let secs=0; setStatus(t('st_gen')+' (0s)','var(--warn)');
   const timer=setInterval(()=>{secs++; setStatus(t('st_gen')+' ('+secs+'s)','var(--warn)');},1000);
@@ -970,13 +968,13 @@ $('gen').onclick=async()=>{
       setStatus('✅ '+t('st_done')+d.file+(d.subs?t('saved_srt'):''),'var(--good)');
       const u='/audio?f='+encodeURIComponent(d.file)+'&t='+Date.now();
       var folder=d.folder||''; window._lastFolder=folder;
+      var sf=d.srt?("'"+d.srt+"'"):"''";
       var html='<audio controls autoplay src="'+u+'"></audio>'+
         '<div class="savebox">📁 '+t('saved_at')+'<br><b class="savepath">'+folder+'</b></div>'+
-        '<div><button type="button" class="gen" onclick="openFolder()" style="margin-top:8px">📂 '+t('open_folder')+'</button></div>'+
-        '<div style="margin-top:6px"><a class="dl" href="'+u+'" download="'+d.file+'">'+t('dl')+'</a>';
-      if(d.srt){ var us='/audio?f='+encodeURIComponent(d.srt)+'&t='+Date.now();
-        html+=' &nbsp; <a class="dl" href="'+us+'" download="'+d.srt+'">'+t('dl_srt')+'</a>'; }
-      html+='</div>';
+        '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
+          '<button type="button" class="gen" style="flex:1;min-width:150px" onclick="openFolder()">📂 '+t('open_folder')+'</button>'+
+          '<button type="button" class="gen" style="flex:1;min-width:150px" onclick="saveToFolder(\''+d.file+'\','+sf+')">💾 '+t('dl2')+'</button>'+
+        '</div>';
       $('player').innerHTML=html;
       addHist(d.file, d.srt);
     } else if(d.busy){ setStatus(t('st_busy'),'var(--warn)'); }
@@ -986,6 +984,23 @@ $('gen').onclick=async()=>{
 };
 function setStatus(t,c){const s=$('status');s.textContent=t;s.style.color=c||'var(--fg)';}
 function openFolder(){ var f=window._lastFolder||''; fetch('/openfolder'+(f?('?d='+encodeURIComponent(f)):'')).catch(function(){}); }
+async function saveToFolder(file, srt){
+  var st=$('status');
+  if(!(window.pywebview && window.pywebview.api && window.pywebview.api.pick_folder)){
+    window.location.href='/audio?f='+encodeURIComponent(file); return;   // browser: normal download
+  }
+  var dir="";
+  try{ dir = await window.pywebview.api.pick_folder(); }catch(e){ dir=""; }
+  if(!dir){ return; }
+  st.textContent=t('st_saving'); st.style.color='var(--warn)';
+  try{
+    var r=await fetch('/saveas',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({file:file,srt:srt||'',dir:dir})});
+    var j=await r.json();
+    if(j.ok){ window._lastFolder=dir; st.innerHTML='✅ '+t('saved_at')+' <b class="savepath">'+dir+'</b>'; st.style.color='var(--good)'; }
+    else{ st.textContent=t('st_err')+(j.error||''); st.style.color='var(--bad)'; }
+  }catch(e){ st.textContent='Error: '+e; st.style.color='var(--bad)'; }
+}
 init().catch(e=>setStatus(t('st_voicesfail')+e,'var(--bad)'));
 (function(){ var L="ur"; try{L=localStorage.getItem("ml_lang")||"ur";}catch(e){} if(!I18N[L])L="ur"; $('uiLang').value=L; setUiLang(L); })();
 $('uiLang').onchange=function(){ setUiLang($('uiLang').value); renderHist(); };
@@ -1089,6 +1104,33 @@ async def openfolder(req):
     except Exception:
         pass
     return web.json_response({"ok": True})
+
+
+async def saveas(req):
+    """Bani hui voice (mp3 + srt) ko student ke chune hue folder mein copy karo."""
+    try:
+        b = await req.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "bad request"})
+    file = os.path.basename(b.get("file") or "")
+    srt = os.path.basename(b.get("srt") or "") if b.get("srt") else ""
+    dst = (b.get("dir") or "").strip()
+    if not file or not dst or not os.path.isdir(dst):
+        return web.json_response({"ok": False, "error": "folder galat hai"})
+    try:
+        src = os.path.join(_FILE_DIRS.get(file, DESKTOP), file)
+        if not os.path.exists(src):
+            return web.json_response({"ok": False, "error": "file nahi mili"})
+        shutil.copy2(src, os.path.join(dst, file))
+        _FILE_DIRS[file] = dst
+        if srt:
+            ssrc = os.path.join(_FILE_DIRS.get(srt, DESKTOP), srt)
+            if os.path.exists(ssrc):
+                shutil.copy2(ssrc, os.path.join(dst, srt))
+                _FILE_DIRS[srt] = dst
+        return web.json_response({"ok": True, "dir": dst})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)})
 
 
 async def preview(req):
@@ -1293,6 +1335,7 @@ def main():
         web.post("/generate", generate),
         web.get("/audio", audio),
         web.get("/openfolder", openfolder),
+        web.post("/saveas", saveas),
         web.get("/preview", preview),
         web.post("/genprompts", genprompts),
         web.post("/gmodels", gmodels),
