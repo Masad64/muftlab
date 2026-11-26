@@ -778,7 +778,7 @@ const I18N = {
   st_script:"Write a script first.", st_voice:"Choose a voice.",
   st_gen:"Generating audio...", st_done:"Done: ", st_done2:"  (saved to Desktop)",
   st_pick:"Choose a folder to save the voice...", st_cancel:"Cancelled — no folder chosen.",
-  st_saving:"Saving to your folder...", dl2:"Save to folder",
+  st_saving:"Saving to your folder...", dl2:"Download",
   st_busy:"Voice service is busy right now. Wait ~10 seconds and press Generate again. (Keep internet on and your PC date/time correct.)",
   st_err:"Error (try again): ", st_testfail:"Voice test failed - try again",
   st_voicesfail:"Voices failed to load (check internet): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"No voiceovers yet.", remove:"Remove", open_folder:"Open Muft Lab folder", saved_at:"Saved in this folder:"
@@ -835,7 +835,7 @@ const I18N = {
   st_script:"Pehle script likho.", st_voice:"Voice choose karo.",
   st_gen:"Aawaz ban rahi hai...", st_done:"Ban gayi: ", st_done2:"  (Desktop pe save)",
   st_pick:"Voice save karne ke liye folder chuno...", st_cancel:"Cancel — koi folder nahi chuna.",
-  st_saving:"Aap ke folder mein save ho raha hai...", dl2:"Folder mein save karo",
+  st_saving:"Aap ke folder mein save ho raha hai...", dl2:"Download",
   st_busy:"Voice service abhi busy hai. ~10 second ruk ke dobara Generate dabao. (Internet on rahe aur PC ka date/time sahi ho.)",
   st_err:"Error (dobara try karo): ", st_testfail:"Voice test fail - dobara try karo",
   st_voicesfail:"Voices load fail (internet check karo): ", dl:"⬇ Download mp3", dl_srt:"⬇ Download .srt", saved_srt:" + .srt", history:"History", no_history:"Abhi koi voiceover nahi.", remove:"Remove", open_folder:"Muft Lab folder kholo", saved_at:"Is folder mein save hua:"
@@ -970,11 +970,7 @@ $('gen').onclick=async()=>{
       var folder=d.folder||''; window._lastFolder=folder;
       var sf=d.srt?("'"+d.srt+"'"):"''";
       var html='<audio controls autoplay src="'+u+'"></audio>'+
-        '<div class="savebox">📁 '+t('saved_at')+'<br><b class="savepath">'+folder+'</b></div>'+
-        '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
-          '<button type="button" class="gen" style="flex:1;min-width:150px" onclick="openFolder()">📂 '+t('open_folder')+'</button>'+
-          '<button type="button" class="gen" style="flex:1;min-width:150px" onclick="saveToFolder(\''+d.file+'\','+sf+')">💾 '+t('dl2')+'</button>'+
-        '</div>';
+        '<div style="margin-top:10px"><button type="button" class="gen" style="width:100%" onclick="saveToFolder(\''+d.file+'\','+sf+')">💾 '+t('dl2')+'</button></div>';
       $('player').innerHTML=html;
       addHist(d.file, d.srt);
     } else if(d.busy){ setStatus(t('st_busy'),'var(--warn)'); }
